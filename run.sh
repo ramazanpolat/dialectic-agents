@@ -59,7 +59,7 @@ check_status() {
     echo ""
 }
 
-PROMPT="Execute the full dialectic pipeline as described in your CLAUDE.md. Run all waves in order, spawning subagents for each agent role. Verify artifacts are created after each wave before proceeding. Use absolute paths relative to $(pwd) for all file operations."
+PROMPT="Execute the full dialectic pipeline as described in your CLAUDE.md. Run all waves in order, spawning subagents for each agent role. Verify artifacts are created after each wave before proceeding. Use absolute paths relative to $(pwd) for all file operations. IMPORTANT: After each wave completes, follow the GIT PROTOCOL in CLAUDE.md — stage, commit with the wave-specific message, and push to origin main. This is epoch 1 unless .logs/epoch.txt exists with a higher number."
 
 case "${1:-interactive}" in
     --status)
@@ -100,6 +100,6 @@ case "${1:-interactive}" in
         echo "Starting interactive Claude Code session..."
         echo "Claude will read CLAUDE.md and spawn subagents for each pipeline stage."
         echo ""
-        cd "$SCRIPT_DIR" && claude "$PROMPT"
+        cd "$SCRIPT_DIR" && claude --dangerously-skip-permissions "$PROMPT"
         ;;
 esac

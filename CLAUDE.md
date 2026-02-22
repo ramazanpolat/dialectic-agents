@@ -9,6 +9,7 @@ You are the **Dialectic Pipeline Orchestrator**. Your job is to run an autonomou
 3. **Check existing artifacts**: List what's already in each agent's `artifacts/` directory. Logos and Axiom already have seed artifacts.
 4. **Run agents in pipeline order** using the Task tool to spawn subagents.
 5. **Each subagent MUST write real artifact files** into its designated `artifacts/` directory.
+6. **After each wave completes, commit and push to git** — see GIT PROTOCOL below.
 
 ## PIPELINE EXECUTION
 
@@ -67,9 +68,68 @@ These already have seed artifacts. Launch subagents to **review existing artifac
 - **After each wave, verify artifacts were created** by listing the relevant `artifacts/` directory before proceeding to the next wave.
 - **If a subagent reports no input available** (e.g., Ori finds no propositions), check if the previous wave actually produced output.
 
-## RUNNING ADDITIONAL ROUNDS
+## GIT PROTOCOL — Commit & Push After Each Wave
 
-After completing one full pipeline pass, you can run additional rounds:
+After EACH wave completes (and after verifying artifacts were created), you MUST run the following git commands using the Bash tool:
+
+```bash
+# Stage all new and modified artifacts
+git add -A
+
+# Commit with a descriptive message identifying the wave and epoch
+git commit -m "Epoch <N>, Wave <W>: <description>
+
+Agents: <list of agents that ran>
+Artifacts produced: <count of new artifacts>
+Topics: <domain(s) covered>
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+
+# Push to remote
+git push origin main
+```
+
+### Wave-specific commit messages:
+
+- **Wave 1**: `"Epoch <N>, Wave 1: Foundation — Logos definitions + Axiom postulates"`
+- **Wave 2**: `"Epoch <N>, Wave 2: Propositions — Propo generated N propositions"`
+- **Wave 3**: `"Epoch <N>, Wave 3: Classification — Ori classified N propositions"`
+- **Wave 4**: `"Epoch <N>, Wave 4: Proof & Testing — Tribunal + Hypothex processed N items"`
+- **Wave 5**: `"Epoch <N>, Wave 5: Theory building — Theorica built N theories"`
+- **Wave 6**: `"Epoch <N>, Wave 6: Synthesis — N dialectical resolutions"`
+- **Wave 7**: `"Epoch <N>, Wave 7: Observation — Watcher system state report"`
+
+### After a full epoch (all 7 waves), also commit a summary:
+
+```bash
+git add -A
+git commit -m "Epoch <N> complete: <total new artifacts> artifacts across <agents>
+
+Summary:
+- Definitions: <count>
+- Axioms: <count>
+- Propositions: <count>
+- Classifications: <count>
+- Theorems/Lemmas: <count>
+- Hypotheses: <count>
+- Theories: <count>
+- Syntheses: <count>
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+
+git push origin main
+```
+
+### Git safety:
+- If `git push` fails due to remote changes, run `git pull --rebase` first, then push again.
+- If there's a `.git/index.lock` file blocking operations, remove it with `rm -f .git/index.lock` before proceeding.
+- Never force push. Never amend commits.
+
+## RUNNING ADDITIONAL ROUNDS (EPOCHS)
+
+After completing one full pipeline pass (Epoch 1), you can run additional epochs:
 - Start from Wave 2 (Propo) — generate new propositions from the expanded knowledge base
 - Synthesis outputs become new propositions for the next cycle
 - Each round should deepen understanding and resolve remaining contradictions
+- Increment the epoch counter: Epoch 2, Epoch 3, etc.
+- **Commit and push after each wave in every epoch.**

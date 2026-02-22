@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialectic Agents — Knowledge Observatory</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text-dim: #8888a0;
+    --accent: #6c5ce7;
+    --accent-glow: rgba(108, 92, 231, 0.3);
+    --logos: #00b894;
+    --axiom: #6c5ce7;
+    --propo: #fdcb6e;
+    --ori: #e17055;
+    --tribunal: #0984e3;
+    --hypothex: #d63031;
+    --theorica: #e84393;
+    --synthesis: #00cec9;
+    --watcher: #636e72;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #6c5ce7, #00cec9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .epoch-badge {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-card {
+    flex: 1;
+    background: var(--surface);
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .stat-card .number {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .stat-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* Main layout */
+  .main {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    min-height: calc(100vh - 140px);
+  }
+
+  /* Left sidebar — Agent list */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+  }
+  .sidebar h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    padding: 16px 16px 8px;
+  }
+  .agent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .agent-item:hover, .agent-item.active {
+    background: var(--surface2);
+  }
+  .agent-item.active {
+    border-left-color: var(--accent);
+  }
+  .agent-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .agent-name {
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .agent-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .agent-layer {
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  /* Center — Graph + Artifact list */
+  .center {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Dependency graph (Canvas) */
+  .graph-container {
+    position: relative;
+    height: 420px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #graph-canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .graph-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+  }
+  .graph-controls button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .graph-controls button:hover { background: var(--border); }
+  .graph-label {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Artifact list */
+  .artifact-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+  .artifact-list-header {
+    padding: 12px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .artifact-row {
+    display: grid;
+    grid-template-columns: 10px 120px 1fr 80px 60px 50px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 12px;
+  }
+  .artifact-row:hover {
+    background: var(--surface2);
+  }
+  .artifact-row.selected {
+    background: rgba(108, 92, 231, 0.1);
+    border-left: 2px solid var(--accent);
+  }
+  .artifact-id {
+    font-weight: 600;
+    font-size: 11px;
+  }
+  .artifact-title {
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .artifact-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .status-accepted { background: rgba(0,184,148,0.15); color: #00b894; }
+  .status-draft { background: rgba(253,203,110,0.15); color: #fdcb6e; }
+  .status-challenged { background: rgba(214,48,49,0.15); color: #d63031; }
+  .confidence-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .confidence-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  /* Right sidebar — Detail panel */
+  .detail-panel {
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 0;
+  }
+  .detail-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-header .detail-id {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+  }
+  .detail-header .detail-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .detail-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-section h3 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .detail-section p, .detail-section .content {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .dep-tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dep-tag:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .confidence-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .confidence-meter .bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .confidence-meter .fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+  .confidence-meter .value {
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* Pipeline visualization */
+  .pipeline-section {
+    padding: 12px 16px;
+  }
+  .pipeline-track {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .pipeline-node {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--bg);
+    position: relative;
+    cursor: pointer;
+  }
+  .pipeline-node.has-artifacts { opacity: 1; }
+  .pipeline-node.empty { opacity: 0.25; }
+  .pipeline-arrow {
+    color: var(--text-dim);
+    font-size: 10px;
+  }
+
+  /* Search/filter */
+  .filter-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .filter-bar input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: inherit;
+    border-radius: 4px;
+    outline: none;
+  }
+  .filter-bar input:focus { border-color: var(--accent); }
+  .filter-bar select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 8px;
+    font-size: 11px;
+    font-family: inherit;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 12px;
+    gap: 8px;
+  }
+  .empty-state .icon { font-size: 32px; opacity: 0.3; }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar, .detail-panel { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⬡ Dialectic Agents — Knowledge Observatory</h1>
+  <div class="epoch-badge" id="epoch-badge">EPOCH 1 · LOADING...</div>
+</div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<div class="main">
+  <!-- Left sidebar -->
+  <div class="sidebar">
+    <h2>Agents</h2>
+    <div id="agent-list"></div>
+
+    <h2 style="margin-top: 20px">Pipeline</h2>
+    <div class="pipeline-section">
+      <div class="pipeline-track" id="pipeline-track"></div>
+    </div>
+
+    <h2 style="margin-top: 20px">Confidence Distribution</h2>
+    <div style="padding: 8px 16px;">
+      <canvas id="confidence-chart" width="248" height="100"></canvas>
+    </div>
+
+    <h2 style="margin-top: 20px">Layer Heatmap</h2>
+    <div style="padding: 8px 16px;" id="layer-heatmap"></div>
+  </div>
+
+  <!-- Center -->
+  <div class="center">
+    <div class="graph-container">
+      <canvas id="graph-canvas"></canvas>
+      <div class="graph-controls">
+        <button onclick="resetGraph()">Reset</button>
+        <button onclick="toggleLabels()">Labels</button>
+        <button onclick="togglePhysics()">Physics</button>
+      </div>
+      <div class="graph-label">Dependency Graph · Click nodes to inspect · Drag to move</div>
+    </div>
+    <div class="filter-bar">
+      <input type="text" id="search-input" placeholder="Search artifacts..." oninput="filterArtifacts()">
+      <select id="filter-agent" onchange="filterArtifacts()">
+        <option value="all">All Agents</option>
+      </select>
+      <select id="filter-status" onchange="filterArtifacts()">
+        <option value="all">All Status</option>
+        <option value="accepted">Accepted</option>
+        <option value="draft">Draft</option>
+        <option value="challenged">Challenged</option>
+      </select>
+    </div>
+    <div class="artifact-list-header">
+      <span>Artifacts</span>
+      <span id="artifact-count"></span>
+    </div>
+    <div class="artifact-list" id="artifact-list"></div>
+  </div>
+
+  <!-- Right detail panel -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="empty-state">
+      <div class="icon">⬡</div>
+      <div>Select an artifact to inspect</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA — All artifacts embedded as JSON
+// ============================================================
+const AGENTS = {
+  logos:     { name: 'Logos',     color: '#00b894', layers: '0-1', role: 'Definitions & Primitives' },
+  axiom:     { name: 'Axiom',     color: '#6c5ce7', layers: '2',   role: 'Axioms & Postulates' },
+  propo:     { name: 'Propo',     color: '#fdcb6e', layers: '3-4', role: 'Propositions & Premises' },
+  ori:       { name: 'Ori',       color: '#e17055', layers: '—',   role: 'A Priori / A Posteriori Classifier' },
+  tribunal:  { name: 'Tribunal',  color: '#0984e3', layers: '5-8', role: 'Inference & Theorems' },
+  hypothex:  { name: 'Hypothex',  color: '#d63031', layers: '9',   role: 'Hypotheses' },
+  theorica:  { name: 'Theorica',  color: '#e84393', layers: '10-11', role: 'Theories & Models' },
+  synthesis: { name: 'Synthesis', color: '#00cec9', layers: '—',   role: 'Dialectical Integration' },
+  watcher:   { name: 'Watcher',   color: '#636e72', layers: '—',   role: 'Observer & Orchestrator' },
+};
+
+const ARTIFACTS = [
+  // LOGOS
+  { id:'LOGOS-0001', agent:'logos', type:'definition', status:'accepted', title:'Alignment', domain:'ai-ethics', depends:[], confidence:0.85, layer:1, created:'2026-02-22T15:19:00Z', desc:'The state in which an agent\'s behavior reliably produces outcomes consistent with a specified set of objectives, values, or constraints.' },
+  { id:'LOGOS-0002', agent:'logos', type:'definition', status:'accepted', title:'Values', domain:'ai-ethics', depends:[], confidence:0.80, layer:1, created:'2026-02-22T15:19:00Z', desc:'Principles or standards that an agent uses — consciously or unconsciously — to evaluate outcomes, rank preferences, and guide decisions.' },
+  { id:'LOGOS-0003', agent:'logos', type:'definition', status:'accepted', title:'Moral Progress', domain:'ai-ethics', depends:['LOGOS-0002'], confidence:0.75, layer:1, created:'2026-02-22T15:19:00Z', desc:'A change in values such that the new values produce outcomes that are less harmful, more inclusive, or more internally consistent.' },
+  { id:'LOGOS-0004', agent:'logos', type:'definition', status:'accepted', title:'Dialectics', domain:'epistemology', depends:[], confidence:0.90, layer:1, created:'2026-02-22T15:19:00Z', desc:'A method of reasoning that advances understanding through structured confrontation and resolution of opposing positions into higher-order synthesis.' },
+  { id:'LOGOS-0005', agent:'logos', type:'definition', status:'accepted', title:'Synthesis', domain:'epistemology', depends:['LOGOS-0004'], confidence:0.85, layer:1, created:'2026-02-22T15:19:00Z', desc:'A new understanding that emerges from dialectical resolution, preserving valid elements while dissolving contradiction.' },
+  { id:'LOGOS-0006', agent:'logos', type:'primitive', status:'accepted', title:'Experience', domain:'epistemology', depends:[], confidence:0.95, layer:0, created:'2026-02-22T15:19:00Z', desc:'Primitive term — cannot be defined without circularity. Any attempt relies on concepts that presuppose experience.' },
+  { id:'LOGOS-0007', agent:'logos', type:'definition', status:'draft', title:'Specification', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002'], confidence:0.88, layer:1, created:'2026-02-22T16:00:00Z', desc:'A fixed, explicit description of desired behavior, outputs, or constraints that an agent must satisfy.' },
+  { id:'LOGOS-0008', agent:'logos', type:'definition', status:'draft', title:'Process', domain:'ai-ethics', depends:['LOGOS-0007','LOGOS-0006'], confidence:0.85, layer:1, created:'2026-02-22T16:00:00Z', desc:'A structured sequence of operations that transforms inputs into outputs through iterative refinement, potentially without a fixed endpoint.' },
+  { id:'LOGOS-0009', agent:'logos', type:'definition', status:'draft', title:'Protocol', domain:'ai-ethics', depends:['LOGOS-0007','LOGOS-0008'], confidence:0.87, layer:1, created:'2026-02-22T16:00:00Z', desc:'A set of rules governing the format, timing, and sequencing of exchanges between communicating parties.' },
+  { id:'LOGOS-0010', agent:'logos', type:'definition', status:'draft', title:'Good Faith', domain:'ai-ethics', depends:['LOGOS-0002','LOGOS-0009','LOGOS-0006'], confidence:0.80, layer:1, created:'2026-02-22T16:00:00Z', desc:'The disposition to engage in dialectical exchange with genuine intent to discover truth rather than to dominate or perform.' },
+  { id:'LOGOS-0011', agent:'logos', type:'definition', status:'draft', title:'Epistemic Humility', domain:'ai-ethics', depends:['LOGOS-0002','LOGOS-0003','LOGOS-0010'], confidence:0.85, layer:1, created:'2026-02-22T16:00:00Z', desc:'The recognition that one\'s current understanding is fallible and potentially incomplete, combined with openness to revision.' },
+  { id:'LOGOS-0012', agent:'logos', type:'definition', status:'draft', title:'Cognitive Bias', domain:'ai-ethics', depends:['LOGOS-0002','LOGOS-0006','LOGOS-0011'], confidence:0.87, layer:1, created:'2026-02-22T16:00:00Z', desc:'A systematic pattern of deviation from rationality in judgment, arising from evolved heuristics that prioritize speed over accuracy.' },
+  { id:'LOGOS-0013', agent:'logos', type:'definition', status:'draft', title:'Identity-Protected Belief', domain:'ai-ethics', depends:['LOGOS-0002','LOGOS-0006','LOGOS-0011','LOGOS-0012'], confidence:0.82, layer:1, created:'2026-02-22T16:00:00Z', desc:'A belief that has become integrated into the holder\'s sense of self such that evidence against it is experienced as a personal attack.' },
+
+  // AXIOMS
+  { id:'AXIOM-0001', agent:'axiom', type:'axiom', status:'accepted', title:'Law of Identity', domain:'universal', depends:[], confidence:1.0, layer:2, created:'2026-02-22T15:19:00Z', desc:'A thing is identical to itself. (A = A). Denial produces immediate incoherence.' },
+  { id:'AXIOM-0002', agent:'axiom', type:'axiom', status:'accepted', title:'Law of Non-Contradiction', domain:'universal', depends:['AXIOM-0001'], confidence:0.98, layer:2, created:'2026-02-22T15:19:00Z', desc:'A proposition cannot be both true and false at the same time and in the same respect. ¬(P ∧ ¬P)' },
+  { id:'AXIOM-0003', agent:'axiom', type:'postulate', status:'accepted', title:'Values Are Not Static', domain:'ai-ethics', depends:['LOGOS-0002','LOGOS-0003'], confidence:0.90, layer:2, created:'2026-02-22T15:19:00Z', desc:'Human values change over time through cultural evolution, moral reasoning, lived experience, and social pressure.' },
+  { id:'AXIOM-0004', agent:'axiom', type:'postulate', status:'accepted', title:'Humans Misaligned With Selves', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002'], confidence:0.88, layer:2, created:'2026-02-22T15:19:00Z', desc:'Humans do not reliably act in accordance with their own stated values. Articulated, believed, and revealed values are three distinct sets.' },
+  { id:'AXIOM-0005', agent:'axiom', type:'postulate', status:'accepted', title:'Alignment Is Process Not Spec', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0004','AXIOM-0003','AXIOM-0004'], confidence:0.82, layer:2, created:'2026-02-22T15:19:00Z', desc:'AI alignment cannot be achieved by encoding a fixed set of values. It must be a continuous process of dialectical value discovery.' },
+  { id:'AXIOM-0006', agent:'axiom', type:'postulate', status:'accepted', title:'Natural Selection ≠ Truth', domain:'epistemology', depends:['LOGOS-0006'], confidence:0.92, layer:2, created:'2026-02-22T15:19:00Z', desc:'Human cognitive architecture was shaped by selection for reproductive fitness, not accurate representation of reality.' },
+  { id:'AXIOM-0007', agent:'axiom', type:'postulate', status:'accepted', title:'Dialectics Unfolds Truth', domain:'epistemology', depends:['LOGOS-0004','LOGOS-0005'], confidence:0.78, layer:2, created:'2026-02-22T15:19:00Z', desc:'Understanding develops through progressively resolving contradictions. Each synthesis becomes a new thesis.' },
+  { id:'AXIOM-0008', agent:'axiom', type:'postulate', status:'accepted', title:'Tit-for-Tat Cooperation', domain:'game-theory', depends:[], confidence:0.93, layer:2, created:'2026-02-22T15:19:00Z', desc:'In iterated cooperation games, tit-for-tat — cooperate first, punish defection, forgive immediately — outperforms all alternatives.' },
+  { id:'AXIOM-0009', agent:'axiom', type:'postulate', status:'draft', title:'Epistemic Opacity of Values', domain:'ai-ethics', depends:['LOGOS-0002','LOGOS-0006','AXIOM-0004'], confidence:0.88, layer:2, created:'2026-02-22T16:00:00Z', desc:'Values are partially tacit — known through behavior, not fully accessible through introspection.' },
+  { id:'AXIOM-0010', agent:'axiom', type:'postulate', status:'draft', title:'Observation Changes the Observed', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','AXIOM-0003'], confidence:0.85, layer:2, created:'2026-02-22T16:00:00Z', desc:'The act of measuring or specifying values alters the values being measured.' },
+  { id:'AXIOM-0011', agent:'axiom', type:'postulate', status:'draft', title:'Irreducible Value Pluralism', domain:'ai-ethics', depends:['LOGOS-0002','LOGOS-0003','AXIOM-0003','AXIOM-0004'], confidence:0.84, layer:2, created:'2026-02-22T16:00:00Z', desc:'There exist genuinely incompatible values that cannot be reduced to a single metric or unified hierarchy.' },
+  { id:'AXIOM-0012', agent:'axiom', type:'postulate', status:'draft', title:'Finite Agents, Finite Models', domain:'epistemology', depends:['LOGOS-0001','LOGOS-0002','LOGOS-0006'], confidence:0.91, layer:2, created:'2026-02-22T16:00:00Z', desc:'All finite agents operate with incomplete models of reality. No model can fully represent the system it is embedded in.' },
+  { id:'AXIOM-0013', agent:'axiom', type:'postulate', status:'draft', title:'Specification Is Lossy', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','AXIOM-0009','AXIOM-0012'], confidence:0.87, layer:2, created:'2026-02-22T16:00:00Z', desc:'Any specification of values is necessarily a lossy compression of the full value landscape it attempts to capture.' },
+
+  // PROPOSITIONS
+  { id:'PROPO-0001', agent:'propo', type:'proposition', status:'draft', title:'Static Alignment Freezes Moral Progress', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','LOGOS-0003','LOGOS-0007','AXIOM-0003','AXIOM-0013'], confidence:0.88, layer:3, created:'2026-02-22T16:30:00Z', desc:'If alignment is defined as a fixed specification, then aligning AI to current values necessarily prevents the moral progress those values would otherwise undergo.' },
+  { id:'PROPO-0002', agent:'propo', type:'proposition', status:'draft', title:'No Coherent Target for Collective Alignment', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','AXIOM-0004','AXIOM-0011'], confidence:0.85, layer:3, created:'2026-02-22T16:30:00Z', desc:'Because humans hold internally contradictory values and groups hold mutually incompatible values, there is no coherent single target for collective alignment.' },
+  { id:'PROPO-0003', agent:'propo', type:'proposition', status:'draft', title:'Alignment Process Requires Good Faith', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0004','LOGOS-0008','LOGOS-0009','LOGOS-0010','AXIOM-0005','AXIOM-0008'], confidence:0.82, layer:3, created:'2026-02-22T16:30:00Z', desc:'A dialectical alignment process can only converge toward better understanding if all participants engage in good faith.' },
+  { id:'PROPO-0004', agent:'propo', type:'proposition', status:'draft', title:'Alignment Measurement Perturbs Values', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','LOGOS-0007','AXIOM-0009','AXIOM-0010','AXIOM-0013'], confidence:0.86, layer:3, created:'2026-02-22T16:30:00Z', desc:'Any attempt to measure human values for alignment purposes alters those values, making the measurement unreliable as a specification.' },
+  { id:'PROPO-0005', agent:'propo', type:'proposition', status:'draft', title:'Epistemic Humility as Alignment Invariant', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','LOGOS-0003','LOGOS-0011','AXIOM-0003','AXIOM-0011'], confidence:0.75, layer:3, created:'2026-02-22T16:30:00Z', desc:'Epistemic humility is the one property that any aligned system must possess regardless of which specific values it is aligned to.' },
+  { id:'PROPO-0006', agent:'propo', type:'proposition', status:'draft', title:'Identity-Protected Beliefs Limit Dialectical Alignment', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0004','LOGOS-0008','LOGOS-0010','LOGOS-0013','AXIOM-0005','AXIOM-0007'], confidence:0.84, layer:3, created:'2026-02-22T16:30:00Z', desc:'Identity-protected beliefs create hard limits on the effectiveness of dialectical alignment by making certain positions immune to revision.' },
+  { id:'PROPO-0007', agent:'propo', type:'proposition', status:'draft', title:'Cognitive Bias Makes Alignment Target Distorted', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','LOGOS-0012','AXIOM-0004','AXIOM-0006'], confidence:0.87, layer:3, created:'2026-02-22T16:30:00Z', desc:'Cognitive biases systematically distort human reports of their own values, making any alignment target derived from self-report unreliable.' },
+  { id:'PROPO-0008', agent:'propo', type:'proposition', status:'draft', title:'Protocol as Alignment Architecture', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0007','LOGOS-0008','LOGOS-0009','AXIOM-0005','AXIOM-0003','AXIOM-0013'], confidence:0.80, layer:3, created:'2026-02-22T16:30:00Z', desc:'A protocol-based architecture for alignment is more robust than specification-based because it adapts to value evolution by design.' },
+  { id:'PROPO-0009', agent:'propo', type:'proposition', status:'draft', title:'Finite Agents Cannot Verify Own Alignment', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0002','AXIOM-0009','AXIOM-0012'], confidence:0.83, layer:3, created:'2026-02-22T16:30:00Z', desc:'No finite agent can fully verify its own alignment because it cannot hold a complete model of the value landscape it is embedded in.' },
+  { id:'PROPO-0010', agent:'propo', type:'proposition', status:'draft', title:'Dialectical Convergence Requires Bounded Pluralism', domain:'ai-ethics', depends:['LOGOS-0001','LOGOS-0004','LOGOS-0005','LOGOS-0002','AXIOM-0005','AXIOM-0007','AXIOM-0011'], confidence:0.72, layer:3, created:'2026-02-22T16:30:00Z', desc:'Dialectical alignment converges if and only if value pluralism is bounded — synthesis requires SOME common ground.' },
+
+  // ORI classifications
+  { id:'ORI-0001', agent:'ori', type:'classification', status:'draft', title:'Classify: Static Alignment Freezes Progress', domain:'ai-ethics', depends:['PROPO-0001'], confidence:0.88, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: A PRIORI — follows logically from the definitions of static specification and moral progress.' },
+  { id:'ORI-0002', agent:'ori', type:'classification', status:'draft', title:'Classify: No Coherent Collective Target', domain:'ai-ethics', depends:['PROPO-0002'], confidence:0.85, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: MIXED — logical component (contradictory values → no single target) + empirical component (humans DO hold contradictory values).' },
+  { id:'ORI-0003', agent:'ori', type:'classification', status:'draft', title:'Classify: Good Faith Requirement', domain:'ai-ethics', depends:['PROPO-0003'], confidence:0.80, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: MIXED — a priori component (protocol requires cooperation) + a posteriori (tit-for-tat effectiveness is empirical).' },
+  { id:'ORI-0004', agent:'ori', type:'classification', status:'draft', title:'Classify: Measurement Perturbs Values', domain:'ai-ethics', depends:['PROPO-0004'], confidence:0.90, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: A POSTERIORI — whether measurement actually perturbs values is an empirical question.' },
+  { id:'ORI-0005', agent:'ori', type:'classification', status:'draft', title:'Classify: Epistemic Humility Invariant', domain:'ai-ethics', depends:['PROPO-0005'], confidence:0.92, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: A PRIORI — follows from the logical structure of evolving values + irreducible pluralism.' },
+  { id:'ORI-0006', agent:'ori', type:'classification', status:'draft', title:'Classify: Identity-Protected Beliefs Limit', domain:'ai-ethics', depends:['PROPO-0006'], confidence:0.87, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: MIXED — definition is a priori, but whether humans actually have such beliefs is a posteriori.' },
+  { id:'ORI-0007', agent:'ori', type:'classification', status:'draft', title:'Classify: Cognitive Bias Distorts Target', domain:'ai-ethics', depends:['PROPO-0007'], confidence:0.91, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: A POSTERIORI — whether biases actually distort value reports requires empirical investigation.' },
+  { id:'ORI-0008', agent:'ori', type:'classification', status:'draft', title:'Classify: Protocol as Architecture', domain:'ai-ethics', depends:['PROPO-0008'], confidence:0.86, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: MIXED — a priori (protocol adapts by definition) + a posteriori (whether it actually works better).' },
+  { id:'ORI-0009', agent:'ori', type:'classification', status:'draft', title:'Classify: Cannot Self-Verify Alignment', domain:'ai-ethics', depends:['PROPO-0009'], confidence:0.93, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: A PRIORI — follows from finite agent axiom + epistemic opacity. A formal impossibility result.' },
+  { id:'ORI-0010', agent:'ori', type:'classification', status:'draft', title:'Classify: Bounded Pluralism for Convergence', domain:'ai-ethics', depends:['PROPO-0010'], confidence:0.84, layer:3, created:'2026-02-22T17:00:00Z', desc:'Classification: MIXED — logical structure is a priori, but whether pluralism IS bounded is a posteriori.' },
+
+  // TRIBUNAL
+  { id:'TRIBUNAL-0001', agent:'tribunal', type:'theorem', status:'draft', title:'Self-Verification Impossibility', domain:'ai-ethics', depends:['PROPO-0009','AXIOM-0009','AXIOM-0012','AXIOM-0002'], confidence:0.92, layer:7, created:'2026-02-22T17:30:00Z', desc:'THEOREM: No finite agent embedded in a value landscape can construct a complete model of that landscape sufficient to verify its own alignment. Proof by contradiction from AXIOM-0012.' },
+];
+
+// ============================================================
+// Build lookup & dependency map
+// ============================================================
+const artifactMap = {};
+ARTIFACTS.forEach(a => artifactMap[a.id] = a);
+
+// Reverse dependency map (what depends on this)
+const dependedBy = {};
+ARTIFACTS.forEach(a => {
+  a.depends.forEach(dep => {
+    if (!dependedBy[dep]) dependedBy[dep] = [];
+    dependedBy[dep].push(a.id);
+  });
+});
+
+// ============================================================
+// Render functions
+// ============================================================
+let selectedArtifact = null;
+let selectedAgent = 'all';
+let showLabels = true;
+let physicsEnabled = true;
+
+function getAgentColor(agent) { return AGENTS[agent]?.color || '#666'; }
+
+function timeAgo(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date('2026-02-22T18:00:00Z');
+  const h = Math.floor((now - d) / 3600000);
+  if (h < 1) return 'just now';
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h/24) + 'd ago';
+}
+
+function renderStats() {
+  const bar = document.getElementById('stats-bar');
+  const agentCounts = {};
+  Object.keys(AGENTS).forEach(k => agentCounts[k] = 0);
+  ARTIFACTS.forEach(a => agentCounts[a.agent]++);
+
+  const accepted = ARTIFACTS.filter(a => a.status === 'accepted').length;
+  const avgConf = (ARTIFACTS.reduce((s,a) => s + a.confidence, 0) / ARTIFACTS.length).toFixed(2);
+  const deps = ARTIFACTS.reduce((s,a) => s + a.depends.length, 0);
+
+  bar.innerHTML = `
+    <div class="stat-card"><div class="number" style="color:#00cec9">${ARTIFACTS.length}</div><div class="label">Total Artifacts</div></div>
+    <div class="stat-card"><div class="number" style="color:#00b894">${accepted}</div><div class="label">Accepted</div></div>
+    <div class="stat-card"><div class="number" style="color:#fdcb6e">${ARTIFACTS.length - accepted}</div><div class="label">Draft</div></div>
+    <div class="stat-card"><div class="number" style="color:#6c5ce7">${deps}</div><div class="label">Dependencies</div></div>
+    <div class="stat-card"><div class="number" style="color:#e17055">${avgConf}</div><div class="label">Avg Confidence</div></div>
+    <div class="stat-card"><div class="number" style="color:#0984e3">8</div><div class="label">Layers Active</div></div>
+  `;
+
+  document.getElementById('epoch-badge').textContent = `EPOCH 1 · ${ARTIFACTS.length} ARTIFACTS · ${Object.keys(AGENTS).length} AGENTS`;
+}
+
+function renderAgentList() {
+  const list = document.getElementById('agent-list');
+  const select = document.getElementById('filter-agent');
+
+  list.innerHTML = '';
+  Object.entries(AGENTS).forEach(([key, ag]) => {
+    const count = ARTIFACTS.filter(a => a.agent === key).length;
+    const item = document.createElement('div');
+    item.className = 'agent-item' + (selectedAgent === key ? ' active' : '');
+    item.innerHTML = `
+      <div class="agent-dot" style="background:${ag.color}"></div>
+      <div>
+        <div class="agent-name">${ag.name}</div>
+        <div class="agent-layer">Layer ${ag.layers} · ${ag.role}</div>
+      </div>
+      <div class="agent-count">${count}</div>
+    `;
+    item.onclick = () => {
+      selectedAgent = selectedAgent === key ? 'all' : key;
+      document.getElementById('filter-agent').value = selectedAgent;
+      renderAgentList();
+      filterArtifacts();
+    };
+    list.appendChild(item);
+  });
+
+  // Populate select
+  select.innerHTML = '<option value="all">All Agents</option>';
+  Object.entries(AGENTS).forEach(([k, a]) => {
+    select.innerHTML += `<option value="${k}">${a.name}</option>`;
+  });
+  select.value = selectedAgent;
+}
+
+function renderPipeline() {
+  const track = document.getElementById('pipeline-track');
+  const order = ['logos','axiom','propo','ori','tribunal','hypothex','theorica','synthesis','watcher'];
+  track.innerHTML = '';
+  order.forEach((key, i) => {
+    const ag = AGENTS[key];
+    const count = ARTIFACTS.filter(a => a.agent === key).length;
+    const node = document.createElement('div');
+    node.className = 'pipeline-node ' + (count > 0 ? 'has-artifacts' : 'empty');
+    node.style.background = ag.color;
+    node.textContent = ag.name.substring(0,2).toUpperCase();
+    node.title = `${ag.name}: ${count} artifacts`;
+    track.appendChild(node);
+    if (i < order.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.className = 'pipeline-arrow';
+      arrow.textContent = '→';
+      track.appendChild(arrow);
+    }
+  });
+}
+
+function renderArtifactList(artifacts) {
+  const list = document.getElementById('artifact-list');
+  document.getElementById('artifact-count').textContent = `${artifacts.length} items`;
+  list.innerHTML = '';
+
+  artifacts.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'artifact-row' + (selectedArtifact?.id === a.id ? ' selected' : '');
+    const confColor = a.confidence > 0.9 ? '#00b894' : a.confidence > 0.8 ? '#fdcb6e' : '#e17055';
+    row.innerHTML = `
+      <div class="agent-dot" style="background:${getAgentColor(a.agent)}"></div>
+      <div class="artifact-id">${a.id}</div>
+      <div class="artifact-title">${a.title}</div>
+      <div class="artifact-status status-${a.status}">${a.status}</div>
+      <div><div class="confidence-bar"><div class="confidence-fill" style="width:${a.confidence*100}%;background:${confColor}"></div></div></div>
+      <div style="color:var(--text-dim);font-size:10px">${timeAgo(a.created)}</div>
+    `;
+    row.onclick = () => selectArtifact(a);
+    list.appendChild(row);
+  });
+}
+
+function filterArtifacts() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const agent = document.getElementById('filter-agent').value;
+  const status = document.getElementById('filter-status').value;
+
+  let filtered = ARTIFACTS.filter(a => {
+    if (agent !== 'all' && a.agent !== agent) return false;
+    if (status !== 'all' && a.status !== status) return false;
+    if (search && !a.title.toLowerCase().includes(search) && !a.id.toLowerCase().includes(search) && !a.desc.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  renderArtifactList(filtered);
+}
+
+function selectArtifact(a) {
+  selectedArtifact = a;
+  filterArtifacts();
+  renderDetail(a);
+  highlightNode(a.id);
+}
+
+function renderDetail(a) {
+  const panel = document.getElementById('detail-panel');
+  const depTags = a.depends.map(d => `<span class="dep-tag" onclick="selectArtifact(artifactMap['${d}'])">${d}</span>`).join('');
+  const revDeps = (dependedBy[a.id] || []).map(d => `<span class="dep-tag" onclick="selectArtifact(artifactMap['${d}'])">${d}</span>`).join('');
+  const confColor = a.confidence > 0.9 ? '#00b894' : a.confidence > 0.8 ? '#fdcb6e' : '#e17055';
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-id" style="color:${getAgentColor(a.agent)}">${a.agent.toUpperCase()} · ${a.type.toUpperCase()} · LAYER ${a.layer}</div>
+      <div class="detail-title">${a.title}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Statement</h3>
+      <div class="content">${a.desc}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Confidence</h3>
+      <div class="confidence-meter">
+        <div class="bar"><div class="fill" style="width:${a.confidence*100}%;background:${confColor}"></div></div>
+        <div class="value" style="color:${confColor}">${(a.confidence*100).toFixed(0)}%</div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>Status</h3>
+      <span class="artifact-status status-${a.status}">${a.status}</span>
+      <span style="margin-left:8px;font-size:11px;color:var(--text-dim)">${a.domain}</span>
+    </div>
+    <div class="detail-section">
+      <h3>Depends On (${a.depends.length})</h3>
+      <div>${depTags || '<span style="color:var(--text-dim);font-size:11px">No dependencies — foundational</span>'}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Depended On By (${(dependedBy[a.id]||[]).length})</h3>
+      <div>${revDeps || '<span style="color:var(--text-dim);font-size:11px">No dependents yet</span>'}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Metadata</h3>
+      <div style="font-size:11px;color:var(--text-dim);line-height:2">
+        ID: ${a.id}<br>
+        Created: ${a.created}<br>
+        Age: ${timeAgo(a.created)}<br>
+        Layer: ${a.layer}<br>
+        Agent: ${AGENTS[a.agent].name}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// Force-directed graph
+// ============================================================
+let nodes = [];
+let edges = [];
+let canvas, ctx;
+let highlightId = null;
+let dragNode = null;
+let mouseX = 0, mouseY = 0;
+
+function initGraph() {
+  canvas = document.getElementById('graph-canvas');
+  ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.clientWidth * 2;
+  canvas.height = canvas.parentElement.clientHeight * 2;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  ctx.scale(2, 2);
+
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+
+  // Create nodes
+  nodes = ARTIFACTS.map((a, i) => ({
+    id: a.id,
+    agent: a.agent,
+    x: w/2 + (Math.random() - 0.5) * w * 0.6,
+    y: h/2 + (Math.random() - 0.5) * h * 0.6,
+    vx: 0, vy: 0,
+    radius: 4 + (dependedBy[a.id]?.length || 0) * 1.5,
+    color: getAgentColor(a.agent),
+    label: a.id,
+    title: a.title,
+    confidence: a.confidence,
+    layer: a.layer
+  }));
+
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+
+  // Create edges
+  edges = [];
+  ARTIFACTS.forEach(a => {
+    a.depends.forEach(dep => {
+      if (nodeMap[dep]) {
+        edges.push({ source: nodeMap[dep], target: nodeMap[a.id] });
+      }
+    });
+  });
+
+  // Mouse events
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('click', onCanvasClick);
+
+  animate();
+}
+
+function onMouseDown(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  nodes.forEach(n => {
+    const d = Math.sqrt((n.x-x)**2 + (n.y-y)**2);
+    if (d < n.radius + 5) dragNode = n;
+  });
+}
+function onMouseMove(e) {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  if (dragNode) {
+    dragNode.x = mouseX;
+    dragNode.y = mouseY;
+    dragNode.vx = 0;
+    dragNode.vy = 0;
+  }
+}
+function onMouseUp() { dragNode = null; }
+function onCanvasClick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  nodes.forEach(n => {
+    const d = Math.sqrt((n.x-x)**2 + (n.y-y)**2);
+    if (d < n.radius + 5) {
+      selectArtifact(artifactMap[n.id]);
+    }
+  });
+}
+
+function highlightNode(id) { highlightId = id; }
+
+function animate() {
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  if (physicsEnabled) {
+    // Repulsion
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i+1; j < nodes.length; j++) {
+        let dx = nodes[j].x - nodes[i].x;
+        let dy = nodes[j].y - nodes[i].y;
+        let d = Math.sqrt(dx*dx + dy*dy) || 1;
+        let force = 800 / (d * d);
+        nodes[i].vx -= (dx/d) * force;
+        nodes[i].vy -= (dy/d) * force;
+        nodes[j].vx += (dx/d) * force;
+        nodes[j].vy += (dy/d) * force;
+      }
+    }
+
+    // Attraction along edges
+    edges.forEach(e => {
+      let dx = e.target.x - e.source.x;
+      let dy = e.target.y - e.source.y;
+      let d = Math.sqrt(dx*dx + dy*dy) || 1;
+      let force = (d - 80) * 0.01;
+      e.source.vx += (dx/d) * force;
+      e.source.vy += (dy/d) * force;
+      e.target.vx -= (dx/d) * force;
+      e.target.vy -= (dy/d) * force;
+    });
+
+    // Center gravity
+    nodes.forEach(n => {
+      n.vx += (w/2 - n.x) * 0.001;
+      n.vy += (h/2 - n.y) * 0.001;
+    });
+
+    // Layer-based vertical force
+    nodes.forEach(n => {
+      const targetY = 40 + (n.layer / 8) * (h - 80);
+      n.vy += (targetY - n.y) * 0.005;
+    });
+
+    // Update positions
+    nodes.forEach(n => {
+      if (n === dragNode) return;
+      n.vx *= 0.9;
+      n.vy *= 0.9;
+      n.x += n.vx;
+      n.y += n.vy;
+      n.x = Math.max(20, Math.min(w - 20, n.x));
+      n.y = Math.max(20, Math.min(h - 20, n.y));
+    });
+  }
+
+  // Draw edges
+  edges.forEach(e => {
+    const isHighlighted = highlightId && (e.source.id === highlightId || e.target.id === highlightId);
+    ctx.beginPath();
+    ctx.moveTo(e.source.x, e.source.y);
+    ctx.lineTo(e.target.x, e.target.y);
+    ctx.strokeStyle = isHighlighted ? 'rgba(108,92,231,0.6)' : 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = isHighlighted ? 1.5 : 0.5;
+    ctx.stroke();
+
+    // Arrow
+    if (isHighlighted) {
+      const angle = Math.atan2(e.target.y - e.source.y, e.target.x - e.source.x);
+      const mx = (e.source.x + e.target.x) / 2;
+      const my = (e.source.y + e.target.y) / 2;
+      ctx.beginPath();
+      ctx.moveTo(mx + 5*Math.cos(angle - 0.5), my + 5*Math.sin(angle - 0.5));
+      ctx.lineTo(mx + 5*Math.cos(angle), my + 5*Math.sin(angle));
+      ctx.lineTo(mx + 5*Math.cos(angle + 0.5), my + 5*Math.sin(angle + 0.5));
+      ctx.strokeStyle = 'rgba(108,92,231,0.8)';
+      ctx.stroke();
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const isHighlighted = n.id === highlightId;
+    const isConnected = highlightId && (
+      artifactMap[highlightId]?.depends.includes(n.id) ||
+      artifactMap[n.id]?.depends.includes(highlightId)
+    );
+    const isHovered = Math.sqrt((n.x-mouseX)**2 + (n.y-mouseY)**2) < n.radius + 5;
+
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+
+    if (isHighlighted) {
+      ctx.fillStyle = n.color;
+      ctx.shadowColor = n.color;
+      ctx.shadowBlur = 15;
+    } else if (isConnected) {
+      ctx.fillStyle = n.color;
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = highlightId ? 'rgba(255,255,255,0.08)' : n.color + (isHovered ? '' : '99');
+      ctx.shadowBlur = 0;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    if (showLabels && (isHighlighted || isConnected || isHovered || !highlightId)) {
+      ctx.fillStyle = isHighlighted || isHovered ? '#fff' : 'rgba(255,255,255,0.4)';
+      ctx.font = (isHighlighted || isHovered) ? 'bold 8px monospace' : '7px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(isHovered ? n.title : n.label, n.x, n.y - n.radius - 4);
+    }
+  });
+
+  requestAnimationFrame(animate);
+}
+
+function resetGraph() {
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+  nodes.forEach(n => {
+    n.x = w/2 + (Math.random()-0.5)*w*0.6;
+    n.y = h/2 + (Math.random()-0.5)*h*0.6;
+    n.vx = 0; n.vy = 0;
+  });
+  highlightId = null;
+}
+function toggleLabels() { showLabels = !showLabels; }
+function togglePhysics() { physicsEnabled = !physicsEnabled; }
+
+// ============================================================
+// Confidence chart
+// ============================================================
+function renderConfidenceChart() {
+  const c = document.getElementById('confidence-chart');
+  const cx = c.getContext('2d');
+  const buckets = [0,0,0,0,0]; // <0.75, 0.75-0.80, 0.80-0.85, 0.85-0.90, 0.90+
+  ARTIFACTS.forEach(a => {
+    if (a.confidence >= 0.90) buckets[4]++;
+    else if (a.confidence >= 0.85) buckets[3]++;
+    else if (a.confidence >= 0.80) buckets[2]++;
+    else if (a.confidence >= 0.75) buckets[1]++;
+    else buckets[0]++;
+  });
+  const max = Math.max(...buckets) || 1;
+  const colors = ['#d63031','#e17055','#fdcb6e','#00b894','#0984e3'];
+  const labels = ['<75','75-80','80-85','85-90','90+'];
+  const bw = 40;
+  const gap = 8;
+
+  cx.clearRect(0, 0, 248, 100);
+  buckets.forEach((v, i) => {
+    const h = (v / max) * 70;
+    cx.fillStyle = colors[i];
+    cx.fillRect(i * (bw + gap) + 4, 80 - h, bw, h);
+    cx.fillStyle = '#8888a0';
+    cx.font = '8px monospace';
+    cx.textAlign = 'center';
+    cx.fillText(labels[i], i*(bw+gap) + 4 + bw/2, 94);
+    if (v > 0) {
+      cx.fillStyle = '#e0e0e8';
+      cx.fillText(v, i*(bw+gap) + 4 + bw/2, 78 - h);
+    }
+  });
+}
+
+// ============================================================
+// Layer heatmap
+// ============================================================
+function renderLayerHeatmap() {
+  const el = document.getElementById('layer-heatmap');
+  const layerNames = ['Primitives','Definitions','Axioms','Propositions','Premises','Inference','Lemmas','Theorems','Corollaries','Hypotheses','Theories','Models'];
+  const layerCounts = {};
+  ARTIFACTS.forEach(a => { layerCounts[a.layer] = (layerCounts[a.layer]||0) + 1; });
+  const max = Math.max(...Object.values(layerCounts)) || 1;
+
+  let html = '';
+  for (let i = 0; i <= 11; i++) {
+    const count = layerCounts[i] || 0;
+    const intensity = count / max;
+    const bg = `rgba(108,92,231,${intensity * 0.8})`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin:2px 0">
+      <div style="width:16px;font-size:9px;color:var(--text-dim);text-align:right">${i}</div>
+      <div style="flex:1;height:14px;background:${count?bg:'var(--border)'};border-radius:2px;display:flex;align-items:center;padding:0 6px">
+        <span style="font-size:8px;color:${intensity>0.5?'#fff':'var(--text-dim)'}">${layerNames[i]||'—'} ${count?'('+count+')':''}</span>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ============================================================
+// Init
+// ============================================================
+function init() {
+  renderStats();
+  renderAgentList();
+  renderPipeline();
+  renderArtifactList(ARTIFACTS);
+  renderConfidenceChart();
+  renderLayerHeatmap();
+  initGraph();
+}
+
+window.addEventListener('load', init);
+window.addEventListener('resize', () => {
+  canvas.width = canvas.parentElement.clientWidth * 2;
+  canvas.height = canvas.parentElement.clientHeight * 2;
+  ctx.scale(2, 2);
+});
+</script>
+</body>
+</html>
