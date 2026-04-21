@@ -134,6 +134,31 @@ draft → evaluated → challenged → accepted | rejected | superseded
 accepted → challenged → superseded (if challenge succeeds)
 ```
 
+## Git Commit Protocol
+
+Every artifact is committed and pushed to GitHub **immediately** after being written. This ensures granular version history — one commit per artifact.
+
+### How to commit
+
+After writing an artifact file, run:
+
+```bash
+bash shared/commit-artifact.sh <path-to-artifact> <agent-name> "<short description>"
+```
+
+The script handles staging, committing with a structured message, and pushing. It uses a lock file to prevent concurrent git operations and retries automatically if push fails.
+
+### Commit message format
+
+```
+[AGENT] Short description
+
+Artifact: AGENT-NNNN-slug.md
+Agent: agent-name
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+```
+
 ## Evaluation Criteria
 
 Each agent evaluates artifacts using criteria specific to its domain, but all share:

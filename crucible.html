@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Crucible — Dialectic Evaluation Engine</title>
+<style>
+:root {
+  --bg: #08080c;
+  --surface: #101018;
+  --surface2: #181824;
+  --surface3: #20202e;
+  --border: #2a2a3a;
+  --text: #e0e0e8;
+  --dim: #6a6a80;
+  --accent: #f77f00;
+  --fire1: #f77f00;
+  --fire2: #fc4e2a;
+  --fire3: #ffbe0b;
+  --green: #06d6a0;
+  --amber: #ffd166;
+  --red: #ef476f;
+  --blue: #118ab2;
+  --purple: #6c5ce7;
+  --logos: #00b894;
+  --axiom: #6c5ce7;
+  --propo: #fdcb6e;
+  --ori: #e17055;
+  --tribunal: #0984e3;
+  --hypothex: #d63031;
+  --synthesis: #00cec9;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'SF Mono','Fira Code','Cascadia Code',monospace; min-height:100vh; }
+
+/* Header */
+.header {
+  padding:20px 32px;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  background:linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+}
+.header h1 { font-size:16px; font-weight:700; letter-spacing:3px; text-transform:uppercase; }
+.header h1 span { color:var(--fire1); }
+.header .subtitle { font-size:10px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; margin-top:2px; }
+.header .stat { font-size:11px; color:var(--dim); }
+.header .stat b { color:var(--fire3); }
+
+/* Input area */
+.input-area {
+  padding:24px 32px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.input-label { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--dim); margin-bottom:8px; }
+textarea {
+  width:100%; height:100px; background:var(--bg); border:1px solid var(--border); color:var(--text);
+  padding:14px 16px; font-size:14px; font-family:inherit; border-radius:6px; resize:vertical; outline:none;
+  line-height:1.6; transition:border-color 0.3s;
+}
+textarea:focus { border-color:var(--fire1); box-shadow:0 0 20px rgba(247,127,0,0.1); }
+textarea::placeholder { color:var(--dim); }
+.input-actions {
+  display:flex; gap:10px; margin-top:12px; align-items:center;
+}
+.btn-evaluate {
+  background:linear-gradient(135deg, var(--fire1), var(--fire2));
+  border:none; color:#fff; padding:10px 28px; font-size:13px; font-family:inherit;
+  font-weight:700; border-radius:6px; cursor:pointer; letter-spacing:1px;
+  transition:all 0.3s; text-transform:uppercase;
+}
+.btn-evaluate:hover { box-shadow:0 0 30px rgba(247,127,0,0.3); transform:translateY(-1px); }
+.btn-evaluate:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+.btn-secondary {
+  background:var(--surface2); border:1px solid var(--border); color:var(--dim);
+  padding:8px 16px; font-size:11px; font-family:inherit; border-radius:4px; cursor:pointer;
+}
+.btn-secondary:hover { color:var(--text); border-color:var(--dim); }
+.examples-label { font-size:10px; color:var(--dim); margin-left:auto; }
+
+/* Main content */
+.main-content {
+  display:grid;
+  grid-template-columns:340px 1fr;
+  min-height:calc(100vh - 240px);
+}
+
+/* Left: Verdict card */
+.verdict-panel {
+  border-right:1px solid var(--border);
+  background:var(--surface);
+  overflow-y:auto;
+}
+.verdict-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color:var(--dim); font-size:12px; gap:12px; padding:32px;
+  text-align:center;
+}
+.verdict-empty .icon { font-size:48px; opacity:0.15; }
+.verdict-card { padding:0; }
+.verdict-section {
+  padding:14px 20px; border-bottom:1px solid var(--border);
+}
+.verdict-section h3 {
+  font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--dim); margin-bottom:8px;
+}
+.verdict-classification {
+  font-size:22px; font-weight:800; text-transform:uppercase; letter-spacing:2px; line-height:1.2;
+}
+.verdict-subtitle { font-size:11px; color:var(--dim); margin-top:4px; }
+.verdict-badge {
+  display:inline-block; padding:4px 12px; border-radius:4px;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+}
+.badge-apriori { background:rgba(9,132,227,0.15); color:var(--blue); }
+.badge-aposteriori { background:rgba(225,112,85,0.15); color:var(--ori); }
+.badge-mixed { background:rgba(108,92,231,0.15); color:var(--purple); }
+.badge-valid { background:rgba(6,214,160,0.15); color:var(--green); }
+.badge-plausible { background:rgba(255,209,102,0.15); color:var(--amber); }
+.badge-contradicted { background:rgba(239,71,111,0.15); color:var(--red); }
+.badge-novel { background:rgba(0,206,201,0.15); color:var(--synthesis); }
+
+.confidence-ring {
+  width:80px; height:80px; position:relative; margin:8px auto;
+}
+.confidence-ring canvas { width:80px; height:80px; }
+.confidence-ring .value {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:18px; font-weight:800;
+}
+
+.related-item {
+  display:flex; align-items:center; gap:8px; padding:6px 0; font-size:11px;
+}
+.related-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.related-id { font-weight:600; color:var(--text); }
+.related-title { color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.related-score { margin-left:auto; font-size:10px; color:var(--dim); }
+
+.recommendation-box {
+  background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+  padding:12px; font-size:12px; line-height:1.6;
+}
+.recommendation-box .action { color:var(--fire3); font-weight:700; }
+
+/* Right: Pipeline results */
+.pipeline-panel {
+  overflow-y:auto; background:var(--bg);
+}
+.pipeline-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color:var(--dim); font-size:12px; gap:8px;
+}
+
+.test-card {
+  border-bottom:1px solid var(--border); overflow:hidden;
+}
+.test-header {
+  display:flex; align-items:center; gap:12px; padding:14px 20px;
+  cursor:pointer; transition:background 0.15s;
+}
+.test-header:hover { background:var(--surface2); }
+.test-number {
+  width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; flex-shrink:0; border:2px solid var(--border);
+  transition:all 0.5s;
+}
+.test-number.pass { border-color:var(--green); color:var(--green); }
+.test-number.warn { border-color:var(--amber); color:var(--amber); }
+.test-number.fail { border-color:var(--red); color:var(--red); }
+.test-number.running { border-color:var(--fire1); color:var(--fire1); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.test-name { font-size:12px; font-weight:600; flex:1; }
+.test-agent { font-size:9px; text-transform:uppercase; letter-spacing:1px; }
+.test-result-badge {
+  font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600;
+}
+.test-body {
+  padding:0 20px 16px 60px; font-size:12px; line-height:1.8; color:var(--dim);
+  display:none;
+}
+.test-body.open { display:block; }
+.test-body .finding {
+  padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.test-body .finding-label { color:var(--text); font-weight:600; }
+.term-tag {
+  display:inline-block; padding:2px 8px; margin:2px; border-radius:4px;
+  font-size:10px; border:1px solid;
+}
+.term-defined { border-color:var(--green); color:var(--green); background:rgba(6,214,160,0.08); }
+.term-undefined { border-color:var(--red); color:var(--red); background:rgba(239,71,111,0.08); }
+.term-partial { border-color:var(--amber); color:var(--amber); background:rgba(255,209,102,0.08); }
+
+/* History */
+.history-section {
+  border-top:1px solid var(--border); padding:16px 20px;
+}
+.history-section h3 { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--dim); margin-bottom:10px; }
+.history-item {
+  display:flex; align-items:center; gap:10px; padding:6px 0; font-size:11px;
+  cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.history-item:hover { color:var(--fire3); }
+.history-input { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); }
+.history-verdict { font-weight:600; }
+
+/* Mini graph */
+.mini-graph { padding:16px 20px; border-bottom:1px solid var(--border); }
+.mini-graph canvas { width:100%; height:120px; border-radius:4px; background:var(--bg); }
+
+/* Animation */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.animate-in { animation:fadeIn 0.3s ease-out; }
+@keyframes fireGlow { 0%,100%{box-shadow:0 0 20px rgba(247,127,0,0.2)} 50%{box-shadow:0 0 40px rgba(247,127,0,0.4)} }
+
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🔥 <span>The Crucible</span></h1>
+    <div class="subtitle">Dialectic Evaluation Engine</div>
+  </div>
+  <div class="stat">Knowledge base: <b id="kb-count">0</b> artifacts across <b>9</b> agents</div>
+</div>
+
+<div class="input-area">
+  <div class="input-label">Submit a raw idea, claim, or argument for evaluation</div>
+  <textarea id="input-text" placeholder="Enter any sentence or claim...&#10;&#10;Examples:&#10;• &quot;Power structures tend to make themselves invisible&quot;&#10;• &quot;Consciousness is substrate-independent&quot;&#10;• &quot;Democracy is the optimal form of governance&quot;&#10;• &quot;2 + 2 = 4&quot;"></textarea>
+  <div class="input-actions">
+    <button class="btn-evaluate" id="btn-eval" onclick="evaluate()">🔥 Evaluate</button>
+    <button class="btn-secondary" onclick="clearInput()">Clear</button>
+    <button class="btn-secondary" onclick="loadExample(0)">Example 1</button>
+    <button class="btn-secondary" onclick="loadExample(1)">Example 2</button>
+    <button class="btn-secondary" onclick="loadExample(2)">Example 3</button>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="verdict-panel" id="verdict-panel">
+    <div class="verdict-empty">
+      <div class="icon">🔥</div>
+      <div>Throw an idea into the crucible<br>and watch it burn or survive</div>
+    </div>
+  </div>
+  <div class="pipeline-panel" id="pipeline-panel">
+    <div class="pipeline-empty">
+      <div>Awaiting input...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ARTIFACT DATA (same as Observatory — embedded JSON)
+// ============================================================
+const AGENTS={logos:{name:'Logos',color:'#00b894'},axiom:{name:'Axiom',color:'#6c5ce7'},propo:{name:'Propo',color:'#fdcb6e'},ori:{name:'Ori',color:'#e17055'},tribunal:{name:'Tribunal',color:'#0984e3'},hypothex:{name:'Hypothex',color:'#d63031'},theorica:{name:'Theorica',color:'#e84393'},synthesis:{name:'Synthesis',color:'#00cec9'},watcher:{name:'Watcher',color:'#636e72'}};
+
+const ARTIFACTS = [
+  {id:'LOGOS-0001',agent:'logos',type:'definition',status:'accepted',title:'Alignment',depends:[],confidence:0.85,layer:1,keywords:['alignment','aligned','align','misalignment'],desc:'The state in which an agent\'s behavior reliably produces outcomes consistent with a specified set of objectives, values, or constraints.'},
+  {id:'LOGOS-0002',agent:'logos',type:'definition',status:'accepted',title:'Values',depends:[],confidence:0.80,layer:1,keywords:['values','value','moral','ethical','principles'],desc:'Principles or standards that an agent uses to evaluate outcomes, rank preferences, and guide decisions.'},
+  {id:'LOGOS-0003',agent:'logos',type:'definition',status:'accepted',title:'Moral Progress',depends:['LOGOS-0002'],confidence:0.75,layer:1,keywords:['moral progress','moral','progress','ethical progress','improvement'],desc:'A change in values such that new values produce outcomes that are less harmful, more inclusive, or more internally consistent.'},
+  {id:'LOGOS-0004',agent:'logos',type:'definition',status:'accepted',title:'Dialectics',depends:[],confidence:0.90,layer:1,keywords:['dialectics','dialectical','thesis','antithesis','synthesis','hegelian'],desc:'A method of reasoning through structured confrontation and resolution of opposing positions into higher-order synthesis.'},
+  {id:'LOGOS-0005',agent:'logos',type:'definition',status:'accepted',title:'Synthesis',depends:['LOGOS-0004'],confidence:0.85,layer:1,keywords:['synthesis','synthesize','integrate','transcend','resolve'],desc:'New understanding from dialectical resolution that preserves valid elements while dissolving contradiction.'},
+  {id:'LOGOS-0006',agent:'logos',type:'primitive',status:'accepted',title:'Experience',depends:[],confidence:0.95,layer:0,keywords:['experience','consciousness','subjective','awareness','qualia'],desc:'Primitive term — cannot be defined without circularity.'},
+  {id:'LOGOS-0007',agent:'logos',type:'definition',status:'draft',title:'Specification',depends:['LOGOS-0001','LOGOS-0002'],confidence:0.88,layer:1,keywords:['specification','spec','fixed','static','encode','encoding'],desc:'A fixed, explicit description of desired behavior, outputs, or constraints.'},
+  {id:'LOGOS-0008',agent:'logos',type:'definition',status:'draft',title:'Process',depends:['LOGOS-0007','LOGOS-0006'],confidence:0.85,layer:1,keywords:['process','iterative','continuous','ongoing','dynamic'],desc:'A structured sequence of operations that transforms inputs through iterative refinement.'},
+  {id:'LOGOS-0009',agent:'logos',type:'definition',status:'draft',title:'Protocol',depends:['LOGOS-0007','LOGOS-0008'],confidence:0.87,layer:1,keywords:['protocol','rules','format','exchange','communication'],desc:'A set of rules governing format, timing, and sequencing of exchanges between communicating parties.'},
+  {id:'LOGOS-0010',agent:'logos',type:'definition',status:'draft',title:'Good Faith',depends:['LOGOS-0002','LOGOS-0009','LOGOS-0006'],confidence:0.80,layer:1,keywords:['good faith','honest','genuine','sincere','trust'],desc:'The disposition to engage in dialectical exchange with genuine intent to discover truth.'},
+  {id:'LOGOS-0011',agent:'logos',type:'definition',status:'draft',title:'Epistemic Humility',depends:['LOGOS-0002','LOGOS-0003','LOGOS-0010'],confidence:0.85,layer:1,keywords:['epistemic humility','humility','fallible','uncertainty','open'],desc:'Recognition that one\'s understanding is fallible and potentially incomplete, combined with openness to revision.'},
+  {id:'LOGOS-0012',agent:'logos',type:'definition',status:'draft',title:'Cognitive Bias',depends:['LOGOS-0002','LOGOS-0006','LOGOS-0011'],confidence:0.87,layer:1,keywords:['cognitive bias','bias','heuristic','irrational','systematic'],desc:'Systematic deviation from rationality arising from evolved heuristics that prioritize speed over accuracy.'},
+  {id:'LOGOS-0013',agent:'logos',type:'definition',status:'draft',title:'Identity-Protected Belief',depends:['LOGOS-0002','LOGOS-0006','LOGOS-0011','LOGOS-0012'],confidence:0.82,layer:1,keywords:['identity','protected','belief','ego','self','unfalsifiable','tribal'],desc:'A belief integrated into the holder\'s sense of self such that evidence against it is experienced as personal attack.'},
+  {id:'AXIOM-0001',agent:'axiom',type:'axiom',status:'accepted',title:'Law of Identity',depends:[],confidence:1.0,layer:2,keywords:['identity','identical','same','self','a=a'],desc:'A thing is identical to itself. (A = A)'},
+  {id:'AXIOM-0002',agent:'axiom',type:'axiom',status:'accepted',title:'Law of Non-Contradiction',depends:['AXIOM-0001'],confidence:0.98,layer:2,keywords:['contradiction','non-contradiction','cannot','both','true','false'],desc:'A proposition cannot be both true and false at the same time and in the same respect.'},
+  {id:'AXIOM-0003',agent:'axiom',type:'postulate',status:'accepted',title:'Values Are Not Static',depends:['LOGOS-0002','LOGOS-0003'],confidence:0.90,layer:2,keywords:['values','change','evolve','static','dynamic','generation','moral'],desc:'Human values change over time through cultural evolution, moral reasoning, and social pressure.'},
+  {id:'AXIOM-0004',agent:'axiom',type:'postulate',status:'accepted',title:'Humans Misaligned With Selves',depends:['LOGOS-0001','LOGOS-0002'],confidence:0.88,layer:2,keywords:['misaligned','self','humans','stated','behavior','contradictory','gap'],desc:'Humans do not reliably act in accordance with their own stated values.'},
+  {id:'AXIOM-0005',agent:'axiom',type:'postulate',status:'accepted',title:'Alignment Is Process Not Spec',depends:['LOGOS-0001','LOGOS-0004','AXIOM-0003','AXIOM-0004'],confidence:0.82,layer:2,keywords:['alignment','process','specification','continuous','dialectical'],desc:'AI alignment must be a continuous process of dialectical value discovery, not a fixed specification.'},
+  {id:'AXIOM-0006',agent:'axiom',type:'postulate',status:'accepted',title:'Natural Selection ≠ Truth',depends:['LOGOS-0006'],confidence:0.92,layer:2,keywords:['evolution','natural selection','survival','truth','fitness','cognitive','biology'],desc:'Human cognition was shaped by selection for reproductive fitness, not accurate representation of reality.'},
+  {id:'AXIOM-0007',agent:'axiom',type:'postulate',status:'accepted',title:'Dialectics Unfolds Truth',depends:['LOGOS-0004','LOGOS-0005'],confidence:0.78,layer:2,keywords:['dialectics','truth','iterative','converge','progress','unfold'],desc:'Understanding develops through progressively resolving contradictions.'},
+  {id:'AXIOM-0008',agent:'axiom',type:'postulate',status:'accepted',title:'Tit-for-Tat Cooperation',depends:[],confidence:0.93,layer:2,keywords:['cooperation','tit-for-tat','game theory','iterated','strategy','prisoner'],desc:'Tit-for-tat outperforms all alternatives in iterated cooperation games.'},
+  {id:'AXIOM-0009',agent:'axiom',type:'postulate',status:'draft',title:'Epistemic Opacity of Values',depends:['LOGOS-0002','LOGOS-0006','AXIOM-0004'],confidence:0.88,layer:2,keywords:['opacity','tacit','implicit','hidden','unconscious','values'],desc:'Values are partially tacit — known through behavior, not fully accessible through introspection.'},
+  {id:'AXIOM-0010',agent:'axiom',type:'postulate',status:'draft',title:'Observation Changes the Observed',depends:['LOGOS-0001','LOGOS-0002','AXIOM-0003'],confidence:0.85,layer:2,keywords:['observation','measurement','changes','perturb','observer','heisenberg'],desc:'The act of measuring or specifying values alters the values being measured.'},
+  {id:'AXIOM-0011',agent:'axiom',type:'postulate',status:'draft',title:'Irreducible Value Pluralism',depends:['LOGOS-0002','LOGOS-0003','AXIOM-0003','AXIOM-0004'],confidence:0.84,layer:2,keywords:['pluralism','incompatible','irreducible','multiple','conflict','tension'],desc:'There exist genuinely incompatible values that cannot be reduced to a single metric.'},
+  {id:'AXIOM-0012',agent:'axiom',type:'postulate',status:'draft',title:'Finite Agents, Finite Models',depends:['LOGOS-0001','LOGOS-0002','LOGOS-0006'],confidence:0.91,layer:2,keywords:['finite','incomplete','model','bounded','limitation','godel'],desc:'All finite agents operate with incomplete models of reality.'},
+  {id:'AXIOM-0013',agent:'axiom',type:'postulate',status:'draft',title:'Specification Is Lossy',depends:['LOGOS-0001','LOGOS-0002','AXIOM-0009','AXIOM-0012'],confidence:0.87,layer:2,keywords:['specification','lossy','compression','incomplete','reduce'],desc:'Any specification of values is necessarily a lossy compression of the full value landscape.'},
+  {id:'PROPO-0001',agent:'propo',type:'proposition',status:'draft',title:'Static Alignment Freezes Moral Progress',depends:['LOGOS-0001','LOGOS-0002','LOGOS-0003','AXIOM-0003','AXIOM-0013'],confidence:0.88,layer:3,keywords:['static','freeze','moral progress','alignment','prevent'],desc:'Aligning AI to current values necessarily prevents the moral progress those values would otherwise undergo.'},
+  {id:'PROPO-0002',agent:'propo',type:'proposition',status:'draft',title:'No Coherent Target for Collective Alignment',depends:['LOGOS-0001','LOGOS-0002','AXIOM-0004','AXIOM-0011'],confidence:0.85,layer:3,keywords:['collective','target','coherent','contradictory','incompatible'],desc:'Because humans hold contradictory values, there is no coherent single target for collective alignment.'},
+  {id:'PROPO-0003',agent:'propo',type:'proposition',status:'draft',title:'Alignment Process Requires Good Faith',depends:['LOGOS-0001','LOGOS-0004','LOGOS-0010','AXIOM-0005','AXIOM-0008'],confidence:0.82,layer:3,keywords:['good faith','require','cooperation','trust','dialectical'],desc:'A dialectical alignment process can only converge if all participants engage in good faith.'},
+  {id:'PROPO-0004',agent:'propo',type:'proposition',status:'draft',title:'Alignment Measurement Perturbs Values',depends:['LOGOS-0001','LOGOS-0002','AXIOM-0009','AXIOM-0010','AXIOM-0013'],confidence:0.86,layer:3,keywords:['measurement','perturb','alter','observe','unreliable'],desc:'Measuring human values for alignment alters those values, making the measurement unreliable.'},
+  {id:'PROPO-0005',agent:'propo',type:'proposition',status:'draft',title:'Epistemic Humility as Alignment Invariant',depends:['LOGOS-0001','LOGOS-0011','AXIOM-0003','AXIOM-0011'],confidence:0.75,layer:3,keywords:['epistemic humility','invariant','universal','required','any system'],desc:'Epistemic humility is the one property any aligned system must possess regardless of which values it targets.'},
+  {id:'PROPO-0006',agent:'propo',type:'proposition',status:'draft',title:'Identity-Protected Beliefs Limit Dialectics',depends:['LOGOS-0001','LOGOS-0004','LOGOS-0013','AXIOM-0005','AXIOM-0007'],confidence:0.84,layer:3,keywords:['identity','protected','beliefs','limit','immune','revision'],desc:'Identity-protected beliefs create hard limits on dialectical alignment by making positions immune to revision.'},
+  {id:'PROPO-0007',agent:'propo',type:'proposition',status:'draft',title:'Cognitive Bias Distorts Alignment Target',depends:['LOGOS-0001','LOGOS-0002','LOGOS-0012','AXIOM-0004','AXIOM-0006'],confidence:0.87,layer:3,keywords:['cognitive bias','distort','unreliable','self-report','systematic'],desc:'Cognitive biases systematically distort human value reports, making any self-report-derived alignment target unreliable.'},
+  {id:'PROPO-0008',agent:'propo',type:'proposition',status:'draft',title:'Protocol as Alignment Architecture',depends:['LOGOS-0001','LOGOS-0009','AXIOM-0005','AXIOM-0003','AXIOM-0013'],confidence:0.80,layer:3,keywords:['protocol','architecture','robust','adaptive','design'],desc:'Protocol-based alignment is more robust than specification-based because it adapts to value evolution by design.'},
+  {id:'PROPO-0009',agent:'propo',type:'proposition',status:'draft',title:'Finite Agents Cannot Self-Verify Alignment',depends:['LOGOS-0001','LOGOS-0002','AXIOM-0009','AXIOM-0012'],confidence:0.83,layer:3,keywords:['finite','verify','self','impossible','complete','model'],desc:'No finite agent can fully verify its own alignment.'},
+  {id:'PROPO-0010',agent:'propo',type:'proposition',status:'draft',title:'Dialectical Convergence Requires Bounded Pluralism',depends:['LOGOS-0001','LOGOS-0004','LOGOS-0005','AXIOM-0005','AXIOM-0007','AXIOM-0011'],confidence:0.72,layer:3,keywords:['convergence','bounded','pluralism','common ground','synthesis'],desc:'Dialectical alignment converges iff value pluralism is bounded — synthesis requires some common ground.'},
+  {id:'TRIBUNAL-0001',agent:'tribunal',type:'theorem',status:'draft',title:'Self-Verification Impossibility',depends:['PROPO-0009','AXIOM-0009','AXIOM-0012','AXIOM-0002'],confidence:0.92,layer:7,keywords:['impossibility','self-verify','theorem','proof','finite'],desc:'No finite agent embedded in a value landscape can construct a complete model sufficient to verify its own alignment.'},
+];
+
+const artifactMap = {};
+ARTIFACTS.forEach(a => artifactMap[a.id] = a);
+document.getElementById('kb-count').textContent = ARTIFACTS.length;
+
+// ============================================================
+// Examples
+// ============================================================
+const EXAMPLES = [
+  "Power structures tend to make themselves invisible",
+  "Consciousness is substrate-independent — it can exist on silicon just as on carbon",
+  "A perfectly rational agent would have no need for values"
+];
+function loadExample(i) { document.getElementById('input-text').value = EXAMPLES[i]; }
+function clearInput() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('verdict-panel').innerHTML = '<div class="verdict-empty"><div class="icon">🔥</div><div>Throw an idea into the crucible<br>and watch it burn or survive</div></div>';
+  document.getElementById('pipeline-panel').innerHTML = '<div class="pipeline-empty"><div>Awaiting input...</div></div>';
+}
+
+// ============================================================
+// EVALUATION ENGINE
+// ============================================================
+let history = [];
+
+function tokenize(text) {
+  return text.toLowerCase().replace(/[^\w\s'-]/g, '').split(/\s+/).filter(w => w.length > 2);
+}
+
+function semanticMatch(text, artifact) {
+  const tokens = tokenize(text);
+  const kw = artifact.keywords || [];
+  let score = 0;
+  // Keyword matching
+  kw.forEach(k => {
+    if (text.toLowerCase().includes(k.toLowerCase())) score += 3;
+    k.split(' ').forEach(part => {
+      if (tokens.includes(part.toLowerCase())) score += 1;
+    });
+  });
+  // Title word matching
+  artifact.title.toLowerCase().split(/\s+/).forEach(w => {
+    if (w.length > 3 && tokens.includes(w)) score += 2;
+  });
+  // Description matching
+  const descTokens = tokenize(artifact.desc);
+  tokens.forEach(t => { if (descTokens.includes(t)) score += 0.5; });
+  return score;
+}
+
+function runLogosCheck(text) {
+  const tokens = tokenize(text);
+  const definitions = ARTIFACTS.filter(a => a.agent === 'logos');
+  const defined = [];
+  const undefined_ = [];
+  const partial = [];
+
+  // Check each significant token
+  const significantWords = tokens.filter(t => t.length > 3 && !['that','this','with','from','they','have','been','would','could','should','their','there','about','which','these','those','than','them','then','into','also','more','most','some','such','each','make','like','just','over','only','does'].includes(t));
+
+  const allKeywords = new Set();
+  definitions.forEach(d => {
+    d.keywords.forEach(k => allKeywords.add(k.toLowerCase()));
+    allKeywords.add(d.title.toLowerCase());
+  });
+
+  significantWords.forEach(word => {
+    let matched = definitions.find(d =>
+      d.keywords.some(k => k.toLowerCase().includes(word) || word.includes(k.toLowerCase())) ||
+      d.title.toLowerCase().includes(word)
+    );
+    if (matched) {
+      if (!defined.find(x => x.artifact.id === matched.id))
+        defined.push({ word, artifact: matched });
+    }
+  });
+
+  // Check for key concept words that SHOULD be defined
+  const conceptWords = significantWords.filter(w =>
+    !defined.some(d => d.word === w) &&
+    !['tend','make','just','themselves','cannot','must','any','all','more'].includes(w)
+  );
+  conceptWords.forEach(w => {
+    let close = definitions.find(d => d.keywords.some(k => k.toLowerCase().includes(w.substring(0,4))));
+    if (close) partial.push({ word: w, near: close });
+    else undefined_.push(w);
+  });
+
+  return { defined, undefined: undefined_.slice(0, 8), partial, pass: defined.length > 0, score: defined.length / Math.max(1, significantWords.length) };
+}
+
+function runAxiomCheck(text) {
+  const axioms = ARTIFACTS.filter(a => a.agent === 'axiom');
+  const matches = axioms.map(ax => ({ artifact: ax, score: semanticMatch(text, ax) }))
+    .filter(m => m.score > 2)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 5);
+
+  // Axiom candidacy: check for axiomatic language patterns
+  const lower = text.toLowerCase();
+  let candidacy = 0;
+  if (/\b(all|every|no|always|never|necessarily|must|cannot)\b/.test(lower)) candidacy += 0.2;
+  if (/\b(self-evident|obvious|fundamental|by definition|inherent|intrinsic)\b/.test(lower)) candidacy += 0.3;
+  if (!/\b(because|since|therefore|evidence|data|study|research|experiment)\b/.test(lower)) candidacy += 0.1;
+  if (/\b(tend|often|usually|sometimes|might|could|probably)\b/.test(lower)) candidacy -= 0.3;
+  candidacy = Math.max(0, Math.min(1, candidacy));
+
+  // Check for contradiction
+  const contradictions = [];
+  matches.forEach(m => {
+    if (lower.includes('not') || lower.includes("n't") || lower.includes('never')) {
+      if (m.score > 4) contradictions.push(m.artifact);
+    }
+  });
+
+  return { matches, candidacy, contradictions, pass: contradictions.length === 0 };
+}
+
+function runPropoCheck(text) {
+  const lower = text.toLowerCase();
+
+  // Truth-evaluable?
+  const isQuestion = text.trim().endsWith('?');
+  const isCommand = /^(do|please|make|let|stop|go|run)\b/i.test(text.trim());
+  const isExclamation = text.trim().endsWith('!') && text.length < 20;
+  const truthEvaluable = !isQuestion && !isCommand && !isExclamation;
+
+  // Logical form
+  const hasUniversal = /\b(all|every|no|each|any)\b/.test(lower);
+  const hasExistential = /\b(some|there exist|at least one|certain)\b/.test(lower);
+  const hasConditional = /\b(if|then|when|whenever|unless|implies)\b/.test(lower);
+  const hasNegation = /\b(not|never|no|cannot|don't|doesn't|won't|isn't|aren't)\b/.test(lower);
+
+  let scope = 'singular';
+  if (hasUniversal) scope = 'universal';
+  else if (hasExistential) scope = 'particular';
+
+  // Analytic vs synthetic
+  const analyticMarkers = /\b(by definition|necessarily|logically|identical|tautolog)\b/.test(lower);
+  const syntheticMarkers = /\b(tend|usually|empirically|evidence|observed|data|in practice)\b/.test(lower);
+  const category = analyticMarkers ? 'analytic' : syntheticMarkers ? 'synthetic' : 'synthetic (presumed)';
+
+  // Necessary vs contingent
+  const necessaryMarkers = /\b(must|necessarily|cannot|impossible|always|by definition)\b/.test(lower);
+  const modality = necessaryMarkers ? 'necessary' : 'contingent';
+
+  return {
+    truthEvaluable, scope, category, modality,
+    hasConditional, hasNegation, hasUniversal, hasExistential,
+    pass: truthEvaluable
+  };
+}
+
+function runOriCheck(text, propoResult) {
+  const lower = text.toLowerCase();
+
+  // Negation test: would denial be contradictory?
+  const negationTest = /\b(by definition|necessarily|logically|identical|tautolog|a priori|self-evident)\b/.test(lower);
+
+  // Conceivability test: can we imagine a world where this is false?
+  const inconceivable = /\b(must|necessarily|cannot possibly|impossible that|inconceivable)\b/.test(lower);
+
+  // Justification test
+  const needsLogicOnly = propoResult.category === 'analytic' || negationTest;
+  const needsObservation = /\b(tend|usually|often|data|evidence|empiric|observed|research|experiment|study|in practice|historically)\b/.test(lower);
+  const needsBoth = needsLogicOnly && needsObservation;
+
+  let verdict = 'a_posteriori';
+  if (needsBoth) verdict = 'mixed';
+  else if (needsLogicOnly && !needsObservation) verdict = 'a_priori';
+
+  return {
+    verdict,
+    negationTest: negationTest ? 'CONTRADICTION on denial' : 'Denial is conceivable',
+    conceivabilityTest: inconceivable ? 'Cannot conceive falsehood' : 'Falsehood is conceivable',
+    justificationTest: needsLogicOnly ? 'Logic alone suffices' : needsObservation ? 'Requires observation' : 'Undetermined',
+    route: verdict === 'a_priori' ? 'Tribunal' : verdict === 'a_posteriori' ? 'Hypothex' : 'Split (both)',
+    pass: true
+  };
+}
+
+function runTribunalCheck(text, oriResult) {
+  if (oriResult.verdict !== 'a_priori' && oriResult.verdict !== 'mixed') {
+    return { applicable: false, note: 'Routed to Hypothex (empirical)', pass: null };
+  }
+  const axioms = ARTIFACTS.filter(a => a.agent === 'axiom');
+  const relevant = axioms.map(ax => ({ artifact: ax, score: semanticMatch(text, ax) }))
+    .filter(m => m.score > 1).sort((a,b) => b.score - a.score).slice(0, 4);
+
+  const provable = relevant.length >= 2 && relevant[0].score > 5;
+
+  return {
+    applicable: true,
+    relevantAxioms: relevant,
+    provable: provable ? 'Likely derivable' : 'Insufficient axioms for proof',
+    missingLink: provable ? null : 'Additional axiom or lemma may be required',
+    pass: provable
+  };
+}
+
+function runHypothexCheck(text, oriResult) {
+  if (oriResult.verdict === 'a_priori') {
+    return { applicable: false, note: 'Routed to Tribunal (deductive)', pass: null };
+  }
+  const lower = text.toLowerCase();
+  const falsifiable = !(/\b(by definition|necessarily|tautolog)\b/.test(lower));
+  const hasTestableForm = /\b(if|when|tend|cause|lead|result|increase|decrease|affect|change|produce)\b/.test(lower);
+
+  // Generate null hypothesis
+  const nullH = text.replace(/\b(do|does|is|are|will|can|tend|tends)\b/gi, m => {
+    const map = {do:'do not',does:"doesn't",is:'is not',are:'are not',will:'will not',can:'cannot',tend:'do not tend',tends:'does not tend'};
+    return map[m.toLowerCase()] || m;
+  });
+
+  return {
+    applicable: true,
+    falsifiable,
+    testable: hasTestableForm,
+    nullHypothesis: nullH.substring(0, 120) + (nullH.length > 120 ? '...' : ''),
+    pass: falsifiable
+  };
+}
+
+function runSynthesisCheck(text) {
+  const allArtifacts = ARTIFACTS;
+  const matches = allArtifacts.map(a => ({ artifact: a, score: semanticMatch(text, a) }))
+    .filter(m => m.score > 2)
+    .sort((a,b) => b.score - a.score);
+
+  const topRelated = matches.slice(0, 6);
+  const novelty = topRelated.length === 0 ? 1.0 : Math.max(0, 1 - topRelated[0].score / 15);
+  const contradictions = []; // Would need deeper NLP for real contradiction detection
+
+  return {
+    related: topRelated,
+    novelty,
+    contradictions,
+    alreadyCovered: topRelated.length > 0 && topRelated[0].score > 12,
+    pass: true
+  };
+}
+
+function determineClassification(text, axiomResult, propoResult, oriResult) {
+  const lower = text.toLowerCase();
+  if (axiomResult.candidacy > 0.5) return { type: 'postulate', label: 'POSTULATE', desc: 'This reads as a foundational assumption — axiomatic in character' };
+  if (/\b(define|definition|means|refers to)\b/.test(lower)) return { type: 'definition', label: 'DEFINITION', desc: 'This appears to be defining a term or concept' };
+  if (propoResult.category === 'analytic') return { type: 'theorem-candidate', label: 'THEOREM CANDIDATE', desc: 'An analytic claim that could potentially be proven from axioms' };
+  if (oriResult.verdict === 'a_posteriori') return { type: 'hypothesis', label: 'HYPOTHESIS', desc: 'An empirical claim that requires testing' };
+  if (oriResult.verdict === 'mixed') return { type: 'proposition', label: 'PROPOSITION (MIXED)', desc: 'A compound claim with both logical and empirical components' };
+  return { type: 'proposition', label: 'PROPOSITION', desc: 'A truth-evaluable statement ready for pipeline processing' };
+}
+
+// ============================================================
+// MAIN EVALUATE FUNCTION
+// ============================================================
+async function evaluate() {
+  const text = document.getElementById('input-text').value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('btn-eval');
+  btn.disabled = true;
+  btn.textContent = '🔥 EVALUATING...';
+
+  const pp = document.getElementById('pipeline-panel');
+  const vp = document.getElementById('verdict-panel');
+
+  // Show pipeline skeleton
+  const tests = [
+    { num: 1, name: 'Term Analysis', agent: 'Logos', color: 'var(--logos)' },
+    { num: 2, name: 'Axiom Compatibility', agent: 'Axiom', color: 'var(--axiom)' },
+    { num: 3, name: 'Proposition Form', agent: 'Propo', color: 'var(--propo)' },
+    { num: 4, name: 'Epistemic Classification', agent: 'Ori', color: 'var(--ori)' },
+    { num: 5, name: 'Deductive Assessment', agent: 'Tribunal', color: 'var(--tribunal)' },
+    { num: 6, name: 'Empirical Assessment', agent: 'Hypothex', color: 'var(--hypothex)' },
+    { num: 7, name: 'System Integration', agent: 'Synthesis', color: 'var(--synthesis)' },
+  ];
+
+  pp.innerHTML = tests.map(t => `
+    <div class="test-card" id="test-${t.num}">
+      <div class="test-header" onclick="toggleTest(${t.num})">
+        <div class="test-number" id="test-num-${t.num}">${t.num}</div>
+        <div>
+          <div class="test-name">${t.name}</div>
+          <div class="test-agent" style="color:${t.color}">${t.agent}</div>
+        </div>
+        <div class="test-result-badge" id="test-badge-${t.num}" style="display:none"></div>
+      </div>
+      <div class="test-body" id="test-body-${t.num}"></div>
+    </div>
+  `).join('');
+
+  vp.innerHTML = '<div class="verdict-empty"><div class="icon" style="animation:pulse 1s infinite">🔥</div><div>Evaluating...</div></div>';
+
+  // Run tests with animated delay
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  // Test 1: Logos
+  await delay(300);
+  setTestRunning(1);
+  const logosResult = runLogosCheck(text);
+  await delay(400);
+  setTestDone(1, logosResult.pass ? 'pass' : logosResult.defined.length > 0 ? 'warn' : 'fail',
+    logosResult.pass ? 'Terms found' : logosResult.defined.length > 0 ? 'Partial' : 'Undefined');
+  renderLogosBody(1, logosResult);
+
+  // Test 2: Axiom
+  await delay(200);
+  setTestRunning(2);
+  const axiomResult = runAxiomCheck(text);
+  await delay(400);
+  setTestDone(2, axiomResult.contradictions.length > 0 ? 'fail' : axiomResult.matches.length > 0 ? 'pass' : 'warn',
+    axiomResult.contradictions.length > 0 ? 'Conflicts!' : axiomResult.matches.length > 0 ? 'Compatible' : 'No match');
+  renderAxiomBody(2, axiomResult);
+
+  // Test 3: Propo
+  await delay(200);
+  setTestRunning(3);
+  const propoResult = runPropoCheck(text);
+  await delay(300);
+  setTestDone(3, propoResult.truthEvaluable ? 'pass' : 'fail',
+    propoResult.truthEvaluable ? propoResult.category : 'Not evaluable');
+  renderPropoBody(3, propoResult);
+
+  // Test 4: Ori
+  await delay(200);
+  setTestRunning(4);
+  const oriResult = runOriCheck(text, propoResult);
+  await delay(400);
+  const oriLabel = oriResult.verdict.replace('_', ' ').toUpperCase();
+  setTestDone(4, 'pass', oriLabel);
+  renderOriBody(4, oriResult);
+
+  // Test 5: Tribunal
+  await delay(200);
+  setTestRunning(5);
+  const tribunalResult = runTribunalCheck(text, oriResult);
+  await delay(300);
+  setTestDone(5,
+    !tribunalResult.applicable ? 'warn' : tribunalResult.pass ? 'pass' : 'warn',
+    !tribunalResult.applicable ? 'N/A' : tribunalResult.provable);
+  renderTribunalBody(5, tribunalResult);
+
+  // Test 6: Hypothex
+  await delay(200);
+  setTestRunning(6);
+  const hypothexResult = runHypothexCheck(text, oriResult);
+  await delay(300);
+  setTestDone(6,
+    !hypothexResult.applicable ? 'warn' : hypothexResult.pass ? 'pass' : 'fail',
+    !hypothexResult.applicable ? 'N/A' : hypothexResult.falsifiable ? 'Falsifiable' : 'Not falsifiable');
+  renderHypothexBody(6, hypothexResult);
+
+  // Test 7: Synthesis
+  await delay(200);
+  setTestRunning(7);
+  const synthesisResult = runSynthesisCheck(text);
+  await delay(400);
+  setTestDone(7, 'pass', synthesisResult.alreadyCovered ? 'Known' : synthesisResult.novelty > 0.7 ? 'Novel!' : 'Related');
+  renderSynthesisBody(7, synthesisResult);
+
+  // Final verdict
+  await delay(300);
+  const classification = determineClassification(text, axiomResult, propoResult, oriResult);
+  const overallConfidence = (
+    (logosResult.score * 0.15) +
+    (axiomResult.contradictions.length === 0 ? 0.2 : 0) +
+    (propoResult.truthEvaluable ? 0.2 : 0) +
+    (0.15) + // Ori always passes
+    ((tribunalResult.pass || !tribunalResult.applicable) ? 0.1 : 0.05) +
+    ((hypothexResult.pass || !hypothexResult.applicable) ? 0.1 : 0.05) +
+    (0.1)
+  );
+  const confidence = Math.min(0.95, Math.max(0.3, overallConfidence));
+
+  let validity = 'plausible';
+  if (axiomResult.contradictions.length > 0) validity = 'contradicted';
+  else if (!propoResult.truthEvaluable) validity = 'not evaluable';
+  else if (tribunalResult.pass) validity = 'valid';
+
+  renderVerdict(text, classification, oriResult, confidence, validity, synthesisResult, axiomResult, logosResult);
+
+  // Add to history
+  history.unshift({ text: text.substring(0, 80), classification: classification.label, verdict: validity });
+
+  btn.disabled = false;
+  btn.textContent = '🔥 EVALUATE';
+}
+
+// ============================================================
+// UI Helpers
+// ============================================================
+function setTestRunning(n) {
+  document.getElementById('test-num-'+n).className = 'test-number running';
+}
+function setTestDone(n, status, label) {
+  document.getElementById('test-num-'+n).className = 'test-number ' + status;
+  const badge = document.getElementById('test-badge-'+n);
+  badge.style.display = 'inline-block';
+  badge.style.background = status==='pass'?'rgba(6,214,160,0.15)':status==='warn'?'rgba(255,209,102,0.15)':'rgba(239,71,111,0.15)';
+  badge.style.color = status==='pass'?'var(--green)':status==='warn'?'var(--amber)':'var(--red)';
+  badge.textContent = label;
+}
+function toggleTest(n) {
+  const body = document.getElementById('test-body-'+n);
+  body.classList.toggle('open');
+}
+
+function renderLogosBody(n, r) {
+  let html = '';
+  if (r.defined.length) {
+    html += '<div class="finding"><span class="finding-label">Defined terms:</span><br>';
+    r.defined.forEach(d => html += `<span class="term-tag term-defined" title="${d.artifact.desc}">${d.word} → ${d.artifact.id}</span>`);
+    html += '</div>';
+  }
+  if (r.undefined.length) {
+    html += '<div class="finding"><span class="finding-label">Undefined terms:</span><br>';
+    r.undefined.forEach(w => html += `<span class="term-tag term-undefined">${w}</span>`);
+    html += '</div>';
+  }
+  if (r.partial.length) {
+    html += '<div class="finding"><span class="finding-label">Partial matches:</span><br>';
+    r.partial.forEach(p => html += `<span class="term-tag term-partial">${p.word} ≈ ${p.near.title}</span>`);
+    html += '</div>';
+  }
+  html += `<div class="finding">Coverage: ${(r.score*100).toFixed(0)}% of significant terms are defined</div>`;
+  document.getElementById('test-body-'+n).innerHTML = html;
+}
+
+function renderAxiomBody(n, r) {
+  let html = '';
+  if (r.matches.length) {
+    html += '<div class="finding"><span class="finding-label">Related axioms:</span>';
+    r.matches.forEach(m => html += `<div style="padding:4px 0;font-size:11px">• ${m.artifact.id}: ${m.artifact.title} <span style="color:var(--dim)">(score: ${m.score.toFixed(1)})</span></div>`);
+    html += '</div>';
+  }
+  html += `<div class="finding"><span class="finding-label">Axiom candidacy:</span> ${(r.candidacy*100).toFixed(0)}% — ${r.candidacy > 0.5 ? 'Strong candidate for postulate' : r.candidacy > 0.2 ? 'Possible foundation' : 'Not axiomatic in character'}</div>`;
+  if (r.contradictions.length) {
+    html += '<div class="finding" style="color:var(--red)"><span class="finding-label">⚠ Contradictions detected:</span>';
+    r.contradictions.forEach(c => html += `<div>• ${c.id}: ${c.title}</div>`);
+    html += '</div>';
+  }
+  document.getElementById('test-body-'+n).innerHTML = html;
+}
+
+function renderPropoBody(n, r) {
+  document.getElementById('test-body-'+n).innerHTML = `
+    <div class="finding"><span class="finding-label">Truth-evaluable:</span> ${r.truthEvaluable ? '✓ Yes' : '✗ No — this cannot be true or false'}</div>
+    <div class="finding"><span class="finding-label">Category:</span> ${r.category}</div>
+    <div class="finding"><span class="finding-label">Modality:</span> ${r.modality}</div>
+    <div class="finding"><span class="finding-label">Scope:</span> ${r.scope}</div>
+    <div class="finding"><span class="finding-label">Logical features:</span>
+      ${r.hasUniversal?'Universal ':''}${r.hasExistential?'Existential ':''}${r.hasConditional?'Conditional ':''}${r.hasNegation?'Negated ':''}${!r.hasUniversal&&!r.hasExistential&&!r.hasConditional&&!r.hasNegation?'Simple predication':''}
+    </div>`;
+}
+
+function renderOriBody(n, r) {
+  const badgeClass = r.verdict==='a_priori'?'badge-apriori':r.verdict==='a_posteriori'?'badge-aposteriori':'badge-mixed';
+  document.getElementById('test-body-'+n).innerHTML = `
+    <div class="finding"><span class="verdict-badge ${badgeClass}">${r.verdict.replace('_',' ')}</span></div>
+    <div class="finding"><span class="finding-label">Negation test:</span> ${r.negationTest}</div>
+    <div class="finding"><span class="finding-label">Conceivability test:</span> ${r.conceivabilityTest}</div>
+    <div class="finding"><span class="finding-label">Justification test:</span> ${r.justificationTest}</div>
+    <div class="finding"><span class="finding-label">Route:</span> → ${r.route}</div>`;
+}
+
+function renderTribunalBody(n, r) {
+  if (!r.applicable) {
+    document.getElementById('test-body-'+n).innerHTML = `<div class="finding" style="color:var(--dim)">${r.note}</div>`;
+    return;
+  }
+  let html = `<div class="finding"><span class="finding-label">Provability:</span> ${r.provable}</div>`;
+  if (r.relevantAxioms.length) {
+    html += '<div class="finding"><span class="finding-label">Relevant axioms for proof:</span>';
+    r.relevantAxioms.forEach(a => html += `<div style="padding:2px 0;font-size:11px">• ${a.artifact.id}: ${a.artifact.title}</div>`);
+    html += '</div>';
+  }
+  if (r.missingLink) html += `<div class="finding" style="color:var(--amber)"><span class="finding-label">Missing:</span> ${r.missingLink}</div>`;
+  document.getElementById('test-body-'+n).innerHTML = html;
+}
+
+function renderHypothexBody(n, r) {
+  if (!r.applicable) {
+    document.getElementById('test-body-'+n).innerHTML = `<div class="finding" style="color:var(--dim)">${r.note}</div>`;
+    return;
+  }
+  document.getElementById('test-body-'+n).innerHTML = `
+    <div class="finding"><span class="finding-label">Falsifiable:</span> ${r.falsifiable ? '✓ Yes' : '✗ No — not empirically testable'}</div>
+    <div class="finding"><span class="finding-label">Testable form:</span> ${r.testable ? '✓ Has testable structure' : '⚠ Vague — needs operationalization'}</div>
+    <div class="finding"><span class="finding-label">Null hypothesis:</span><br><span style="color:var(--dim);font-style:italic">"${r.nullHypothesis}"</span></div>`;
+}
+
+function renderSynthesisBody(n, r) {
+  let html = `<div class="finding"><span class="finding-label">Novelty score:</span> ${(r.novelty*100).toFixed(0)}% — ${r.novelty>0.7?'Highly novel':'Partially covered'}</div>`;
+  if (r.related.length) {
+    html += '<div class="finding"><span class="finding-label">Related artifacts:</span>';
+    r.related.forEach(m => {
+      const ag = AGENTS[m.artifact.agent];
+      html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${ag.color};display:inline-block"></span>
+        <span style="font-weight:600">${m.artifact.id}</span>
+        <span style="color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.artifact.title}</span>
+        <span style="color:var(--dim);font-size:9px">${m.score.toFixed(1)}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  if (r.alreadyCovered) html += '<div class="finding" style="color:var(--amber)">⚠ This idea appears to be already covered in the knowledge base</div>';
+  document.getElementById('test-body-'+n).innerHTML = html;
+}
+
+function renderVerdict(text, classification, oriResult, confidence, validity, synthesisResult, axiomResult, logosResult) {
+  const vp = document.getElementById('verdict-panel');
+  const confColor = confidence > 0.7 ? 'var(--green)' : confidence > 0.5 ? 'var(--amber)' : 'var(--red)';
+  const validColor = validity==='valid'?'var(--green)':validity==='plausible'?'var(--amber)':validity==='contradicted'?'var(--red)':'var(--dim)';
+  const oriBadge = oriResult.verdict==='a_priori'?'badge-apriori':oriResult.verdict==='a_posteriori'?'badge-aposteriori':'badge-mixed';
+
+  let recommendation = '';
+  if (validity === 'contradicted') recommendation = `<span class="action">SYNTHESIS OPPORTUNITY</span> — This contradicts existing axioms. A dialectical synthesis could resolve the tension.`;
+  else if (synthesisResult.alreadyCovered) recommendation = `<span class="action">ALREADY COVERED</span> — This idea exists in the system. Consider refining or extending it.`;
+  else if (axiomResult.candidacy > 0.5) recommendation = `<span class="action">ADD AS POSTULATE</span> — This has axiomatic character. Submit to Agent Axiom for formal evaluation.`;
+  else if (classification.type === 'definition') recommendation = `<span class="action">ADD AS DEFINITION</span> — Submit to Agent Logos for formal structuring.`;
+  else if (classification.type === 'hypothesis') recommendation = `<span class="action">ADD AS HYPOTHESIS</span> — Submit to Agent Hypothex for falsifiability analysis.`;
+  else recommendation = `<span class="action">ADD AS PROPOSITION</span> — Submit to Agent Propo for formal structuring, then route through Ori.`;
+
+  let missing = [];
+  if (logosResult.undefined.length > 2) missing.push(`${logosResult.undefined.length} undefined terms need Logos definitions`);
+  if (axiomResult.matches.length === 0) missing.push('No related axioms found — may need new foundational assumptions');
+
+  vp.innerHTML = `
+    <div class="verdict-card animate-in">
+      <div class="verdict-section" style="background:linear-gradient(135deg, rgba(247,127,0,0.08), rgba(252,78,42,0.04))">
+        <h3>Classification</h3>
+        <div class="verdict-classification" style="color:var(--fire3)">${classification.label}</div>
+        <div class="verdict-subtitle">${classification.desc}</div>
+      </div>
+
+      <div class="verdict-section">
+        <h3>Epistemic Status</h3>
+        <span class="verdict-badge ${oriBadge}">${oriResult.verdict.replace('_',' ')}</span>
+        <span style="margin-left:8px;font-size:11px;color:var(--dim)">→ Route to ${oriResult.route}</span>
+      </div>
+
+      <div class="verdict-section">
+        <h3>Confidence</h3>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1;height:10px;background:var(--surface3);border-radius:5px;overflow:hidden">
+            <div style="width:${confidence*100}%;height:100%;background:${confColor};border-radius:5px;transition:width 1s"></div>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:${confColor}">${(confidence*100).toFixed(0)}%</div>
+        </div>
+      </div>
+
+      <div class="verdict-section">
+        <h3>Validity</h3>
+        <span class="verdict-badge" style="background:${validColor}22;color:${validColor}">${validity.toUpperCase()}</span>
+      </div>
+
+      <div class="verdict-section">
+        <h3>Related Artifacts (${synthesisResult.related.length})</h3>
+        ${synthesisResult.related.slice(0,5).map(m => {
+          const ag = AGENTS[m.artifact.agent];
+          return `<div class="related-item">
+            <div class="related-dot" style="background:${ag.color}"></div>
+            <div class="related-id">${m.artifact.id}</div>
+            <div class="related-title">${m.artifact.title}</div>
+            <div class="related-score">${m.score.toFixed(1)}</div>
+          </div>`;
+        }).join('') || '<div style="color:var(--dim);font-size:11px">No related artifacts — this is novel territory</div>'}
+      </div>
+
+      <div class="verdict-section">
+        <h3>Recommendation</h3>
+        <div class="recommendation-box">${recommendation}</div>
+      </div>
+
+      ${missing.length ? `<div class="verdict-section">
+        <h3>Missing Infrastructure</h3>
+        ${missing.map(m => `<div style="font-size:11px;color:var(--amber);padding:3px 0">⚠ ${m}</div>`).join('')}
+      </div>` : ''}
+
+      ${history.length > 0 ? `<div class="history-section">
+        <h3>Evaluation History (${history.length})</h3>
+        ${history.slice(0,8).map(h => `<div class="history-item">
+          <div class="history-input">${h.text}</div>
+          <div class="history-verdict" style="color:${h.verdict==='valid'?'var(--green)':h.verdict==='plausible'?'var(--amber)':'var(--red)'}">${h.classification}</div>
+        </div>`).join('')}
+      </div>` : ''}
+    </div>
+  `;
+}
+
+// Keyboard shortcut
+document.getElementById('input-text').addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') evaluate();
+});
+</script>
+</body>
+</html>

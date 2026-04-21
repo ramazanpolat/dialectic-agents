@@ -59,7 +59,7 @@ check_status() {
     echo ""
 }
 
-PROMPT="Execute the full dialectic pipeline as described in your CLAUDE.md. Run all waves in order, spawning subagents for each agent role. Verify artifacts are created after each wave before proceeding. Use absolute paths relative to $(pwd) for all file operations. IMPORTANT: After each wave completes, follow the GIT PROTOCOL in CLAUDE.md — stage, commit with the wave-specific message, and push to origin main. This is epoch 1 unless .logs/epoch.txt exists with a higher number."
+PROMPT="Execute the full dialectic pipeline as described in your CLAUDE.md. Run all waves in order, spawning subagents for each agent role. Verify artifacts are created after each wave before proceeding. Use absolute paths relative to $(pwd) for all file operations. IMPORTANT: Follow the GIT PROTOCOL in CLAUDE.md — every subagent must commit and push EACH artifact immediately after writing it, using bash shared/commit-artifact.sh. Include this instruction when spawning every subagent. This is epoch 1 unless .logs/epoch.txt exists with a higher number."
 
 case "${1:-interactive}" in
     --status)

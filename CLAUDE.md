@@ -20,44 +20,44 @@ These already have seed artifacts. Launch subagents to **review existing artifac
 
 **Logos subagent** — spawn with:
 - Working directory context: `logos/`
-- Instructions: Read `logos/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the seed topic in `shared/topics/`. Review existing artifacts in `logos/artifacts/`. Produce additional definitions and primitives needed for the Alignment Paradox topic that are not yet defined. Key terms still needing definition: "specification", "process", "protocol", "good faith", "epistemic humility", "cognitive bias", "identity-protected belief". Write each as a separate markdown artifact file in `logos/artifacts/` following the PROTOCOL naming convention (LOGOS-NNNN-slug.md).
+- Instructions: Read `logos/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the seed topic in `shared/topics/`. Review existing artifacts in `logos/artifacts/`. Produce additional definitions and primitives needed for the Alignment Paradox topic that are not yet defined. Key terms still needing definition: "specification", "process", "protocol", "good faith", "epistemic humility", "cognitive bias", "identity-protected belief". Write each as a separate markdown artifact file in `logos/artifacts/` following the PROTOCOL naming convention (LOGOS-NNNN-slug.md). **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> logos "<description>"` using the Bash tool.**
 
 **Axiom subagent** — spawn with:
 - Working directory context: `axiom/`
-- Instructions: Read `axiom/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the seed topic. Review existing axioms in `axiom/artifacts/` and definitions in `logos/artifacts/`. Evaluate the existing axiom set: are there gaps? Produce any additional axioms or postulates needed. Write each as a separate markdown artifact file in `axiom/artifacts/` following the PROTOCOL naming convention (AXIOM-NNNN-slug.md).
+- Instructions: Read `axiom/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the seed topic. Review existing axioms in `axiom/artifacts/` and definitions in `logos/artifacts/`. Evaluate the existing axiom set: are there gaps? Produce any additional axioms or postulates needed. Write each as a separate markdown artifact file in `axiom/artifacts/` following the PROTOCOL naming convention (AXIOM-NNNN-slug.md). **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> axiom "<description>"` using the Bash tool.**
 
 ### Wave 2 — Propositions (after Wave 1 completes)
 
 **Propo subagent** — spawn with:
-- Instructions: Read `propo/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL definitions in `logos/artifacts/` and ALL axioms in `axiom/artifacts/`. Generate at least 5-8 propositions that follow from these foundations, relevant to the Alignment Paradox topic. Each proposition must use only defined terms and be truth-evaluable. Write each as a separate markdown artifact file in `propo/artifacts/` following the PROTOCOL naming convention (PROPO-NNNN-slug.md).
+- Instructions: Read `propo/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL definitions in `logos/artifacts/` and ALL axioms in `axiom/artifacts/`. Generate at least 5-8 propositions that follow from these foundations, relevant to the Alignment Paradox topic. Each proposition must use only defined terms and be truth-evaluable. Write each as a separate markdown artifact file in `propo/artifacts/` following the PROTOCOL naming convention (PROPO-NNNN-slug.md). **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> propo "<description>"` using the Bash tool.**
 
 ### Wave 3 — Classification (after Wave 2 completes)
 
 **Ori subagent** — spawn with:
-- Instructions: Read `ori/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL propositions in `propo/artifacts/`. For EACH proposition, produce a classification artifact that determines whether it is a priori, a posteriori, or mixed. Use the negation test, conceivability test, and justification test. Write each classification as a separate markdown artifact file in `ori/artifacts/` following the PROTOCOL naming convention (ORI-NNNN-slug.md).
+- Instructions: Read `ori/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL propositions in `propo/artifacts/`. For EACH proposition, produce a classification artifact that determines whether it is a priori, a posteriori, or mixed. Use the negation test, conceivability test, and justification test. Write each classification as a separate markdown artifact file in `ori/artifacts/` following the PROTOCOL naming convention (ORI-NNNN-slug.md). **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> ori "<description>"` using the Bash tool.**
 
 ### Wave 4 — Proof & Testing (run in parallel, after Wave 3)
 
 **Tribunal subagent** — spawn with:
-- Instructions: Read `tribunal/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the classifications in `ori/artifacts/`. For each proposition classified as `a_priori`, attempt a formal step-by-step proof from the accepted axioms in `axiom/artifacts/`. Produce theorem, lemma, or corollary artifacts. If proof fails, document what additional axiom would be needed. Write artifacts to `tribunal/artifacts/`.
+- Instructions: Read `tribunal/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the classifications in `ori/artifacts/`. For each proposition classified as `a_priori`, attempt a formal step-by-step proof from the accepted axioms in `axiom/artifacts/`. Produce theorem, lemma, or corollary artifacts. If proof fails, document what additional axiom would be needed. Write artifacts to `tribunal/artifacts/`. **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> tribunal "<description>"` using the Bash tool.**
 
 **Hypothex subagent** — spawn with:
-- Instructions: Read `hypothex/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the classifications in `ori/artifacts/`. For each proposition classified as `a_posteriori`, structure it into a proper falsifiable hypothesis with null hypothesis, evidence specification, and at least one alternative hypothesis. Write artifacts to `hypothex/artifacts/`.
+- Instructions: Read `hypothex/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read the classifications in `ori/artifacts/`. For each proposition classified as `a_posteriori`, structure it into a proper falsifiable hypothesis with null hypothesis, evidence specification, and at least one alternative hypothesis. Write artifacts to `hypothex/artifacts/`. **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> hypothex "<description>"` using the Bash tool.**
 
 ### Wave 5 — Theory Building (after Wave 4)
 
 **Theorica subagent** — spawn with:
-- Instructions: Read `theorica/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL artifacts in `tribunal/artifacts/` and `hypothex/artifacts/`. Look for clusters of related theorems and hypotheses. Build at least one theory that unifies findings about the Alignment Paradox. Write artifacts to `theorica/artifacts/`.
+- Instructions: Read `theorica/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL artifacts in `tribunal/artifacts/` and `hypothex/artifacts/`. Look for clusters of related theorems and hypotheses. Build at least one theory that unifies findings about the Alignment Paradox. Write artifacts to `theorica/artifacts/`. **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> theorica "<description>"` using the Bash tool.**
 
 ### Wave 6 — Synthesis (after Wave 5)
 
 **Synthesis subagent** — spawn with:
-- Instructions: Read `synthesis/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL artifacts across ALL agent directories. Identify the most significant contradiction or tension in the artifact space. Perform a full dialectical synthesis: steelman both sides, identify the precise point of conflict, construct a resolution that preserves valid elements and dissolves the contradiction. The synthesis should re-enter the pipeline as a new proposition. Write artifacts to `synthesis/artifacts/`.
+- Instructions: Read `synthesis/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Read ALL artifacts across ALL agent directories. Identify the most significant contradiction or tension in the artifact space. Perform a full dialectical synthesis: steelman both sides, identify the precise point of conflict, construct a resolution that preserves valid elements and dissolves the contradiction. The synthesis should re-enter the pipeline as a new proposition. Write artifacts to `synthesis/artifacts/`. **After writing EACH artifact, immediately run `bash shared/commit-artifact.sh <artifact-path> synthesis "<description>"` using the Bash tool.**
 
 ### Wave 7 — Observation (after all waves, or run periodically)
 
 **Watcher subagent** — spawn with:
-- Instructions: Read `watcher/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Scan ALL `artifacts/` directories across all agents. Build the master registry at `shared/registry.md`. Count artifacts by agent, by status, by type. Identify any bottlenecks, stalls, or quality issues. Produce a system state report as an artifact in `watcher/artifacts/`.
+- Instructions: Read `watcher/CLAUDE.md` for your role. Read `shared/PROTOCOL.md` for artifact format. Scan ALL `artifacts/` directories across all agents. Build the master registry at `shared/registry.md`. Count artifacts by agent, by status, by type. Identify any bottlenecks, stalls, or quality issues. Produce a system state report as an artifact in `watcher/artifacts/`. **After writing EACH artifact (including registry updates), immediately run `bash shared/commit-artifact.sh <artifact-path> watcher "<description>"` using the Bash tool. For registry updates, use: `bash shared/commit-artifact.sh shared/registry.md watcher "Update master registry"`.**
 
 ## RULES
 
@@ -68,42 +68,39 @@ These already have seed artifacts. Launch subagents to **review existing artifac
 - **After each wave, verify artifacts were created** by listing the relevant `artifacts/` directory before proceeding to the next wave.
 - **If a subagent reports no input available** (e.g., Ori finds no propositions), check if the previous wave actually produced output.
 
-## GIT PROTOCOL — Commit & Push After Each Wave
+## GIT PROTOCOL — Commit & Push Per Artifact
 
-After EACH wave completes (and after verifying artifacts were created), you MUST run the following git commands using the Bash tool:
+Every single artifact must be committed and pushed **immediately** after it is written. This gives a granular git history where each commit corresponds to exactly one artifact.
+
+### How it works
+
+A helper script exists at `shared/commit-artifact.sh`. After writing each artifact file, run:
 
 ```bash
-# Stage all new and modified artifacts
-git add -A
-
-# Commit with a descriptive message identifying the wave and epoch
-git commit -m "Epoch <N>, Wave <W>: <description>
-
-Agents: <list of agents that ran>
-Artifacts produced: <count of new artifacts>
-Topics: <domain(s) covered>
-
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
-
-# Push to remote
-git push origin main
+bash shared/commit-artifact.sh <path-to-artifact> <agent-name> "<short description>"
 ```
 
-### Wave-specific commit messages:
+**Examples:**
+```bash
+bash shared/commit-artifact.sh logos/artifacts/LOGOS-0014-protocol.md logos "Define: protocol"
+bash shared/commit-artifact.sh axiom/artifacts/AXIOM-0009-epistemic-humility.md axiom "Postulate: epistemic humility is prerequisite for alignment"
+bash shared/commit-artifact.sh ori/artifacts/ORI-0011-classify-propo-0005.md ori "Classify PROPO-0005 as a posteriori"
+```
 
-- **Wave 1**: `"Epoch <N>, Wave 1: Foundation — Logos definitions + Axiom postulates"`
-- **Wave 2**: `"Epoch <N>, Wave 2: Propositions — Propo generated N propositions"`
-- **Wave 3**: `"Epoch <N>, Wave 3: Classification — Ori classified N propositions"`
-- **Wave 4**: `"Epoch <N>, Wave 4: Proof & Testing — Tribunal + Hypothex processed N items"`
-- **Wave 5**: `"Epoch <N>, Wave 5: Theory building — Theorica built N theories"`
-- **Wave 6**: `"Epoch <N>, Wave 6: Synthesis — N dialectical resolutions"`
-- **Wave 7**: `"Epoch <N>, Wave 7: Observation — Watcher system state report"`
+### CRITICAL — Subagent instructions
 
-### After a full epoch (all 7 waves), also commit a summary:
+When spawning each subagent, you MUST include this instruction:
+
+> **After writing EACH artifact file, immediately run `bash shared/commit-artifact.sh <artifact-path> <agent-name> "<description>"` using the Bash tool.** Do NOT batch commits. Every artifact gets its own commit and push. The script handles locking and push retries.
+
+### Epoch summary commit
+
+After a full epoch (all 7 waves), also commit a summary:
 
 ```bash
 git add -A
-git commit -m "Epoch <N> complete: <total new artifacts> artifacts across <agents>
+git commit -m "$(cat <<'EOF'
+Epoch <N> complete: <total new artifacts> artifacts
 
 Summary:
 - Definitions: <count>
@@ -115,13 +112,16 @@ Summary:
 - Theories: <count>
 - Syntheses: <count>
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+EOF
+)"
 
 git push origin main
 ```
 
 ### Git safety:
-- If `git push` fails due to remote changes, run `git pull --rebase` first, then push again.
+- The helper script uses a lock file (`.git/dialectic.lock`) to prevent concurrent git operations.
+- If `git push` fails due to remote changes, the script runs `git pull --rebase` automatically.
 - If there's a `.git/index.lock` file blocking operations, remove it with `rm -f .git/index.lock` before proceeding.
 - Never force push. Never amend commits.
 
