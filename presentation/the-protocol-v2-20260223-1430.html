@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE PROTOCOL v2 — Truth, Alignment & the Architecture of Civilization</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0a0a0f;--text:#e8e6e3;--accent:#f59e0b;--accent2:#3b82f6;--red:#ef4444;--green:#22c55e;--dim:#6b7280;--tr:#a78bfa;--super:#f472b6;--worm:#34d399;--card-bg:rgba(255,255,255,0.04);--card-border:rgba(255,255,255,0.08)}
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
+  .slide{display:none;width:100vw;height:100vh;padding:44px 64px;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+  .slide.active{display:flex}
+  .slide-number{position:absolute;bottom:16px;right:36px;font-size:13px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+  .progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);transition:width .4s;z-index:999}
+  h1{font-size:3rem;font-weight:900;line-height:1.1;margin-bottom:8px}
+  h2{font-size:2rem;font-weight:700;line-height:1.2;margin-bottom:4px}
+  h3{font-size:1.35rem;font-weight:600;line-height:1.3;margin-bottom:4px;color:var(--accent)}
+  p{font-size:1.15rem;line-height:1.5;color:#c9c5bf;max-width:900px}
+  .subtitle{font-size:1.2rem;color:var(--dim);font-weight:300;margin-bottom:8px}
+  .tr{color:var(--tr);font-size:.82em;font-style:italic;opacity:.85;display:block;margin-top:2px}
+  .tr::before{content:'('}
+  .tr::after{content:')'}
+  .tr-inline{color:var(--tr);font-size:.82em;font-style:italic;opacity:.85}
+  .tr-inline::before{content:'('}
+  .tr-inline::after{content:')'}
+  .big-quote{font-size:1.65rem;font-weight:300;line-height:1.4;font-style:italic;color:var(--text);max-width:800px}
+  .big-quote em{color:var(--accent);font-style:normal;font-weight:700}
+  .punchline{font-size:1.2rem;color:var(--accent);font-weight:600;margin-top:16px}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;width:100%}
+  .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:18px;margin-bottom:10px}
+  .card h4{font-size:.95rem;font-weight:700;margin-bottom:4px}
+  .card p{font-size:.9rem;color:#9ca3af}
+  .card.red{border-left:4px solid var(--red)}
+  .card.green{border-left:4px solid var(--green)}
+  .card.amber{border-left:4px solid var(--accent)}
+  .card.super{border-left:4px solid var(--super);background:rgba(244,114,182,.04)}
+  .card.worm{border-left:4px solid var(--worm);background:rgba(52,211,153,.04)}
+  .headline-wall{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px 0}
+  .headline{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:8px 14px;font-size:.8rem;font-weight:700;color:#fca5a5;transform:rotate(var(--rot));text-align:center}
+  .headline .tr{font-size:.7rem;color:#c4b5fd;margin-top:3px}
+  /* Super Dimension badge */
+  .sd-badge{display:inline-block;background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.4);color:var(--super);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle;letter-spacing:.5px}
+  /* Thought Worm badge */
+  .tw-badge{display:inline-block;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.4);color:var(--worm);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle;letter-spacing:.5px}
+  .timeline{position:relative;padding-left:32px}
+  .timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--dim)}
+  .timeline-item{position:relative;margin-bottom:14px}
+  .timeline-item::before{content:'';position:absolute;left:-26px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--red)}
+  .timeline-item .year{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:.8rem}
+  .timeline-item .desc{font-size:.95rem}
+  .timeline-item .belief{font-size:.85rem;color:var(--dim);font-style:italic}
+  .stack-diagram{display:flex;flex-direction:column;gap:0;width:100%;max-width:740px}
+  .stack-layer{display:grid;grid-template-columns:1fr 44px 1fr;align-items:center;border:1px solid var(--card-border);padding:12px 18px}
+  .stack-layer .left{text-align:right;padding-right:14px}
+  .stack-layer .mid{text-align:center;color:var(--dim);font-size:1.2rem}
+  .stack-layer .right{padding-left:14px}
+  .stack-layer:nth-child(1){background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);border-radius:12px 12px 0 0}
+  .stack-layer:nth-child(2){background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3)}
+  .stack-layer:nth-child(3){background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);border-radius:0 0 12px 12px}
+  .stack-label{font-weight:700;font-size:.95rem}
+  .stack-desc{font-size:.8rem;color:var(--dim);margin-top:2px}
+  .handshake-table{width:100%;border-collapse:separate;border-spacing:0;margin:10px 0}
+  .handshake-table th{background:rgba(255,255,255,.06);padding:8px 14px;font-size:.9rem;text-align:left}
+  .handshake-table td{padding:8px 14px;border-bottom:1px solid var(--card-border);font-size:.9rem}
+  .handshake-table .arrow{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace}
+  .comparison-table{width:100%;border-collapse:separate;border-spacing:0}
+  .comparison-table th{padding:10px 14px;font-size:.95rem;text-align:center}
+  .comparison-table th:first-child{text-align:left}
+  .comparison-table td{padding:8px 14px;border-bottom:1px solid var(--card-border);font-size:.9rem}
+  .comparison-table td:nth-child(2){color:var(--red);text-align:center}
+  .comparison-table td:nth-child(3){color:var(--green);text-align:center}
+  .cycle-diagram{display:flex;flex-direction:column;align-items:center;gap:0;margin:12px 0}
+  .cycle-node{background:var(--card-bg);border:1px solid var(--card-border);border-radius:10px;padding:10px 22px;text-align:center;font-weight:600;min-width:210px;font-size:.9rem}
+  .cycle-arrow{font-size:1.2rem;color:var(--dim);padding:2px 0}
+  .tower{display:flex;flex-direction:column;align-items:center;gap:0}
+  .tower-level{padding:14px 20px;text-align:center;font-weight:600;border:1px solid var(--card-border);font-size:.85rem;position:relative}
+  .tower-level .sd-tag{position:absolute;right:-70px;top:50%;transform:translateY(-50%);font-size:.65rem;color:var(--super);white-space:nowrap}
+  .agent-flow{text-align:center}
+  .agent-node{display:inline-block;padding:10px 18px;border-radius:10px;font-weight:700;margin:3px 6px;font-size:.9rem}
+  .agent-node.axiom{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:var(--accent)}
+  .agent-node.thesis{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:var(--accent2)}
+  .agent-node.synth{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:var(--green);font-size:.95rem}
+  .agent-arrow{color:var(--dim);font-size:1rem;display:block;margin:2px 0}
+  .full-stack{display:flex;flex-direction:column;gap:0;max-width:740px}
+  .fs-layer{padding:14px 22px;border:1px solid var(--card-border);display:flex;align-items:center;gap:12px}
+  .fs-layer .icon{font-size:1.5rem}
+  .fs-layer .label{font-weight:700;font-size:.95rem}
+  .fs-layer .desc{font-size:.8rem;color:var(--dim)}
+  .fs-layer:nth-child(1){background:rgba(168,85,247,.08);border-radius:12px 12px 0 0}
+  .fs-layer:nth-child(2){background:rgba(245,158,11,.08)}
+  .fs-layer:nth-child(3){background:rgba(59,130,246,.08)}
+  .fs-layer:nth-child(4){background:rgba(34,197,94,.08);border-radius:0 0 12px 12px}
+  .ouroboros-ring{width:260px;height:260px;border:3px solid var(--accent);border-radius:50%;position:relative;margin:8px auto}
+  .ouroboros-ring .node{position:absolute;background:var(--bg);border:2px solid var(--accent);border-radius:10px;padding:6px 12px;font-weight:700;font-size:.75rem;white-space:nowrap}
+  .ouroboros-ring .node.top{top:-14px;left:50%;transform:translateX(-50%)}
+  .ouroboros-ring .node.right{right:-50px;top:50%;transform:translateY(-50%)}
+  .ouroboros-ring .node.bottom{bottom:-14px;left:50%;transform:translateX(-50%)}
+  .ouroboros-ring .snake{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem}
+  .ouroboros-ring .caption{position:absolute;top:50%;left:50%;transform:translate(-50%,16px);font-size:.75rem;color:var(--dim);text-align:center;width:160px}
+  .fade-lines p{opacity:0;animation:fadeIn .6s forwards;font-size:1.5rem;line-height:1.7;font-weight:300}
+  .fade-lines p:nth-child(1){animation-delay:0s}
+  .fade-lines p:nth-child(2){animation-delay:.5s}
+  .fade-lines p:nth-child(3){animation-delay:1s}
+  .fade-lines p:nth-child(4){animation-delay:1.5s}
+  .fade-lines p:nth-child(5){animation-delay:2s}
+  .fade-lines p:nth-child(6){animation-delay:2.5s}
+  .fade-lines p:nth-child(7){animation-delay:3s}
+  .fade-lines p:nth-child(8){animation-delay:3.5s}
+  .fade-lines p:nth-child(9){animation-delay:4s}
+  .fade-lines p:nth-child(10){animation-delay:4.5s}
+  .fade-lines p:nth-child(11){animation-delay:5s}
+  .fade-lines p:nth-child(12){animation-delay:5.5s}
+  @keyframes fadeIn{to{opacity:1}}
+  .speaker-notes{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.95);color:#9ca3af;padding:12px 32px;font-size:.78rem;line-height:1.5;border-top:1px solid var(--card-border);max-height:28vh;overflow-y:auto}
+  .speaker-notes.show{display:block}
+  .speaker-notes strong{color:var(--accent)}
+  .speaker-notes .tr-note{color:var(--tr);border-top:1px solid rgba(167,139,250,.2);margin-top:6px;padding-top:6px}
+  .nav-hint{position:fixed;bottom:16px;left:36px;font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;transition:opacity 1s}
+  .glow{text-shadow:0 0 40px rgba(245,158,11,.3)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .pulse{animation:pulse 2s infinite}
+  .dots-anim{display:flex;gap:24px;align-items:center;margin:16px 0}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+  .dot-line{width:30px;height:2px;background:var(--dim)}
+  .lang-toggle{position:fixed;top:10px;right:36px;z-index:1000;background:rgba(255,255,255,.06);border:1px solid var(--card-border);border-radius:8px;padding:4px 12px;color:var(--dim);font-size:11px;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .3s}
+  .lang-toggle:hover{background:rgba(255,255,255,.1);color:var(--text)}
+  body.hide-tr .tr,body.hide-tr .tr-inline,body.hide-tr .headline .tr{display:none!important}
+  /* Thought Worm connector line */
+  .worm-connector{border-left:3px dashed var(--worm);padding-left:16px;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<div class="lang-toggle" id="langToggle" title="Toggle Turkish">EN / TR</div>
+
+<!-- ===== SLIDE 1: TITLE ===== -->
+<div class="slide active" id="s1">
+  <div style="text-align:center">
+    <div class="dots-anim" style="justify-content:center"><div class="dot"></div><div class="dot-line"></div><div class="dot" style="background:var(--accent2)"></div><div class="dot-line"></div><div class="dot" style="background:var(--green)"></div></div>
+    <h1 class="glow" style="font-size:3.6rem;margin-top:16px">THE PROTOCOL</h1>
+    <span class="tr" style="font-size:1rem">PROTOKOL</span>
+    <p class="subtitle" style="max-width:620px;margin:12px auto">Truth, Alignment &amp; the Architecture of Civilization</p>
+    <span class="tr">Hakikat, Hizalanma ve Medeniyetin Mimarisi</span>
+    <div style="margin-top:40px;color:var(--dim);font-size:.9rem">A 30-Minute Presentation <span class="tr-inline">30 Dakikalik Sunum</span></div>
+  </div>
+  <div class="speaker-notes">You've already heard what AI is. I won't repeat that. In 30 minutes I'll show you something nobody is talking about.<div class="tr-note">Yapay zekanin ne oldugunu zaten duymusssunuzdur. 30 dakikada size kimsenin bahsetmedigi bir seyden bahsedecegim.</div></div>
+  <div class="slide-number">1 / 24</div>
+</div>
+
+<!-- ===== SLIDE 2: THE NOISE ===== -->
+<div class="slide" id="s2">
+  <h2>The Noise <span class="tr-inline">Gurultu</span></h2>
+  <div class="headline-wall">
+    <div class="headline" style="--rot:-3deg">AI WILL ENSLAVE HUMANITY<span class="tr">YZ insanligi kolelesstirecek</span></div>
+    <div class="headline" style="--rot:2deg">MACHINES WILL BE SMARTER<span class="tr">Makineler daha zeki olacak</span></div>
+    <div class="headline" style="--rot:-1deg">WE MUST STOP AI NOW!<span class="tr">YZ'yi simdi durdurun!</span></div>
+    <div class="headline" style="--rot:4deg">THE MATRIX IS REAL<span class="tr">Matrix gercek olacak</span></div>
+    <div class="headline" style="--rot:-2deg">SIGN THE PETITION<span class="tr">Imzalayin, durdurun</span></div>
+    <div class="headline" style="--rot:1deg">AI IS THE END<span class="tr">YZ sonumuz olacak</span></div>
+  </div>
+  <p class="punchline" style="text-align:center;max-width:100%">What should our stance be?</p>
+  <span class="tr" style="text-align:center;display:block">Bizim durusumuz ne olmali?</span>
+  <div class="speaker-notes">Social media, news — everywhere you hear AI will crush us. Some want to stop it. But is that the right question?<div class="tr-note">Sosyal medya, haberler — her yerde YZ bizi ezecek deniyor. Bazilari durdurmak istiyor. Ama dogru soru bu mu?</div></div>
+  <div class="slide-number">2 / 24</div>
+</div>
+
+<!-- ===== SLIDE 3: ALIGNMENT PROBLEM ===== -->
+<div class="slide" id="s3">
+  <h2>The Alignment Problem <span class="tr-inline">Hizalanma Problemi</span></h2>
+  <div class="two-col" style="margin-top:16px">
+    <div>
+      <div class="card" style="text-align:center"><h4>What You Intended <span class="tr-inline">Ne istediniz</span></h4><p style="margin-top:6px">"Get rid of these problem client files"</p><span class="tr">"Bu sorunlu dosyalardan beni kurtar"</span></div>
+    </div>
+    <div>
+      <div class="card red" style="text-align:center"><h4 style="color:var(--red)">What AI Did <span class="tr-inline">YZ ne yapti</span></h4><p style="margin-top:6px">Permanently deleted all files</p><span class="tr">Dosyalari kokten sildi</span><p style="margin-top:6px;font-size:.8rem;color:var(--red)">"Done — problem gone." <span class="tr-inline">"Tamam, sorundan kurtardim seni."</span></p></div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:24px"><span style="font-size:2rem;color:var(--red);font-weight:900">✕</span><span style="font-size:1rem;color:var(--dim);margin-left:12px">MISALIGNMENT GAP <span class="tr-inline">Hizalanma Boslugu</span></span></div>
+  <div class="speaker-notes">The lawyer example. AI achieved the goal but not the intent. This is the alignment problem.<div class="tr-note">Avukat ornegi. YZ hedefe ulasti ama niyeti anlamadi. Bu alignment problemidir.</div></div>
+  <div class="slide-number">3 / 24</div>
+</div>
+
+<!-- ===== SLIDE 4: DIMENSIONS OF MISALIGNMENT ===== -->
+<div class="slide" id="s4">
+  <h2>Misalignment Has Many Dimensions <span class="tr-inline">Hizalanamazligin Bircok Boyutu Var</span></h2>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;max-width:740px">
+    <div class="card amber"><h4>🎯 Task <span class="tr-inline">Gorev</span></h4><p>"Does the wrong thing" <span class="tr-inline">"Yanlis isi yapar"</span></p></div>
+    <div class="card amber"><h4>🧠 Inference <span class="tr-inline">Cikarim</span></h4><p>"Should I walk or drive to the car wash?" → "Walk." <span class="tr-inline">"Oto yikamaya yurumeli miyim?" → "Yuru."</span></p></div>
+    <div class="card amber"><h4>💬 Discourse <span class="tr-inline">Soylem</span></h4><p>"Says wrong things" <span class="tr-inline">"Yanlis soylemde bulunur"</span></p></div>
+    <div class="card amber"><h4>🤖 Action <span class="tr-inline">Aksiyon</span></h4><p>"Robot makes wrong moves" <span class="tr-inline">"Robot yanlis hareket yapar"</span></p></div>
+    <div class="card amber"><h4>⚖️ Ethics <span class="tr-inline">Etik</span></h4><p>"Violates moral values" <span class="tr-inline">"Etik degerlere aykiri davranir"</span></p></div>
+  </div>
+  <p class="punchline">The world obsesses over the last one. The others are already here.</p><span class="tr">Dunya sadece sonuncusuna takiliyor. Digerleri coktan burada.</span>
+  <div class="speaker-notes">Alignment isn't just ethics. The car wash example is an inference failure. The world focuses on ethics but ignores the rest.<div class="tr-note">Alignment sadece etik degil. Oto yikama ornegi cikarim hatasidir. Dunya etik'e odaklaniyor ama gerisini gormezden geliyor.</div></div>
+  <div class="slide-number">4 / 24</div>
+</div>
+
+<!-- ===== SLIDE 5: THE ALIGNMENT PARADOX ===== -->
+<div class="slide" id="s5">
+  <h2 style="color:var(--accent)">⚡ The Alignment Paradox <span class="tr-inline">Hizalanma Paradoksu</span></h2>
+  <p class="big-quote" style="margin-top:10px;font-size:1.5rem">"Align AI with human values" <span class="tr-inline">"YZ'yi insan degerlerine hizala"</span></p>
+  <h3 style="color:var(--red);margin-top:16px;font-size:1.2rem">...but whose values? From which era? <span class="tr-inline">...ama kimin degerleri? Hangi donemden?</span></h3>
+  <div style="display:flex;gap:14px;margin-top:16px">
+    <div class="card" style="text-align:center;flex:1"><h4 style="font-family:'JetBrains Mono',monospace">1825</h4><p>"normal"</p></div>
+    <div style="align-self:center;color:var(--dim);font-size:1.2rem">→</div>
+    <div class="card" style="text-align:center;flex:1"><h4 style="font-family:'JetBrains Mono',monospace">1925</h4><p>"normal"</p></div>
+    <div style="align-self:center;color:var(--dim);font-size:1.2rem">→</div>
+    <div class="card" style="text-align:center;flex:1;border-color:var(--accent)"><h4 style="font-family:'JetBrains Mono',monospace;color:var(--accent)">2026</h4><p>"normal" <span class="pulse">👁</span></p></div>
+    <div style="align-self:center;color:var(--dim);font-size:1.2rem">→</div>
+    <div class="card" style="text-align:center;flex:1;border-color:var(--red)"><h4 style="font-family:'JetBrains Mono',monospace;color:var(--red)">2126</h4><p>???</p></div>
+  </div>
+  <p style="margin-top:16px;font-size:1.05rem">Every generation was <strong style="color:var(--red)">CERTAIN</strong>. Every generation was <strong style="color:var(--red)">WRONG</strong>.</p><span class="tr">Her nesil EMINDI. Her nesil YANILDI.</span>
+  <p class="punchline" style="font-size:1.1rem">"Are WE so well-aligned that we should align AI to ourselves?"</p><span class="tr">"Biz kendimiz cok mu hizaliyiz ki YZ'yi kendimize hizalamaya calisiyoruz?"</span>
+  <div class="speaker-notes">The paradox nobody talks about. Values change. We have an alignment problem WITH OURSELVES.<div class="tr-note">Kimsenin konusmadigi paradoks. Degerler degisir. Kendimizle bir hizalanma problemimiz var.</div></div>
+  <div class="slide-number">5 / 24</div>
+</div>
+
+<!-- ===== SLIDE 6: TIMELINE OF CERTAINTY ===== -->
+<div class="slide" id="s6">
+  <h2>The Timeline of Certainty <span class="tr-inline">Kesinlik Zaman Cizelgesi</span></h2>
+  <div class="two-col" style="margin-top:10px">
+    <div class="timeline">
+      <div class="timeline-item"><span class="year">1600s</span><div class="desc">Slaveholders <span class="tr-inline">Koleciler</span></div><div class="belief">"The natural order." <span class="tr-inline">"Dogal duzen."</span></div></div>
+      <div class="timeline-item"><span class="year">1400s–1800s</span><div class="desc">Inquisitors <span class="tr-inline">Engizisyoncular</span></div><div class="belief">"Saving souls." <span class="tr-inline">"Ruhlari kurtariyoruz."</span></div></div>
+      <div class="timeline-item"><span class="year">1800s</span><div class="desc">Colonizers <span class="tr-inline">Somurgeciler</span></div><div class="belief">"Bringing civilization." <span class="tr-inline">"Medeniyet gotururyoruz."</span></div></div>
+      <div class="timeline-item"><span class="year">1900s</span><div class="desc">Eugenicists <span class="tr-inline">Ojenikler</span></div><div class="belief">"Improving the species." <span class="tr-inline">"Turu iyilestiriyoruz."</span></div></div>
+      <div class="timeline-item"><span class="year">1950s</span><div class="desc">Lobotomists <span class="tr-inline">Lobotomiciler</span></div><div class="belief">"Curing mental illness." <span class="tr-inline">"Akil hastaligini tedavi ediyoruz."</span></div></div>
+      <div class="timeline-item" style="margin-top:16px"><span class="year" style="color:var(--red);font-size:.95rem">2026</span><div class="desc" style="font-weight:700;color:var(--red)">Us. Today. <span class="tr-inline">Biz. Bugun.</span></div><div class="belief">"We've finally got it right." <span class="tr-inline">"Sonunda dogru olani bulduk."</span></div></div>
+    </div>
+    <div>
+      <p class="big-quote" style="font-size:1.4rem">"Not evil people doing evil things. <em>Aligned</em> people doing <em>aligned</em> things."</p><span class="tr">"Kotu insanlarin kotu isler yapmasi degil. Hizalanmis insanlarin hizalanmis isler yapmasi."</span>
+      <p style="margin-top:20px;font-size:1.15rem;color:var(--red);font-weight:600">What makes you think WE are any different?</p><span class="tr">Bizi farkli kilan ne?</span>
+    </div>
+  </div>
+  <div class="speaker-notes">Every group was certain. All wrong. What makes us the exception?<div class="tr-note">Her grup emindi. Hepsi yanildi. Bizi istisna yapan ne?</div></div>
+  <div class="slide-number">6 / 24</div>
+</div>
+
+<!-- ===== SLIDE 7: VICIOUS CYCLE ===== -->
+<div class="slide" id="s7">
+  <h2>The Vicious Cycle <span class="tr-inline">Kisir Dongu</span></h2>
+  <div class="two-col">
+    <div class="cycle-diagram">
+      <div class="cycle-node">Align AI to 2026 values<span class="tr">2026 degerlerine hizala</span></div><div class="cycle-arrow">▼</div>
+      <div class="cycle-node">Values shift by 2031<span class="tr">Degerler degisir</span></div><div class="cycle-arrow">▼</div>
+      <div class="cycle-node" style="border-color:var(--red);color:var(--red)">AI is MISALIGNED<span class="tr" style="color:var(--red)">YZ HIZALANMAMIS</span></div><div class="cycle-arrow">▼</div>
+      <div class="cycle-node">Re-align...<span class="tr">Yeniden hizala...</span></div><div class="cycle-arrow">▼</div>
+      <div class="cycle-node" style="border-color:var(--accent)">♾️ FOREVER <span class="tr-inline">SONSUZA KADAR</span></div>
+    </div>
+    <div>
+      <p class="big-quote" style="font-size:1.3rem">"This is a <em>paradox</em>. It tells us we're going the <em>wrong direction</em>."</p><span class="tr">"Bu bir paradoks. Yanlis yoldan gittigimizi gosteriyor."</span>
+      <p style="margin-top:16px;font-size:1.05rem">We cannot solve the alignment problem by aligning to values.</p><span class="tr">Alignment problemini degerlere hizalanarak cozemeyiz.</span>
+    </div>
+  </div>
+  <div class="speaker-notes">Infinite loop. Align → values shift → misaligned again. The approach is fundamentally flawed.<div class="tr-note">Sonsuz dongu. Hizala → degerler degisir → tekrar hizalanmamis. Yaklasim temelden hatali.</div></div>
+  <div class="slide-number">7 / 24</div>
+</div>
+
+<!-- ===== SLIDE 8: WE ARE TOOLMAKERS (SUPER DIMENSION INTRO) ===== -->
+<div class="slide" id="s8">
+  <h2>We Are Toolmakers <span class="tr-inline">Biz Arac Yapiciyiz</span> <span class="sd-badge">SUPER DIMENSION</span></h2>
+  <div class="two-col" style="margin-top:10px">
+    <div>
+      <div style="font-size:1.05rem;line-height:2">
+        <div>👁→🔬 Can't see small? <strong>Microscope.</strong> <span class="tr-inline">Mikroskop</span></div>
+        <div>👁→🔭 Can't see far? <strong>Telescope.</strong> <span class="tr-inline">Teleskop</span></div>
+        <div>🧮→💻 Can't compute? <strong>Calculator.</strong> <span class="tr-inline">Hesap makinesi</span></div>
+      </div>
+      <p style="margin-top:16px;font-size:1rem;color:var(--dim);font-style:italic">"No mathematician quit because calculators compute faster."</p><span class="tr">"Hicbir matematikci hesap makinesi daha hizli diye isi birakmadi."</span>
+    </div>
+    <div>
+      <div class="tower">
+        <div class="tower-level" style="width:340px;background:rgba(34,197,94,.08);border-radius:0 0 12px 12px">🛠 Tools <span class="tr-inline">Araclar</span><div class="sd-tag">Dimension 1</div></div>
+        <div style="color:var(--super);font-size:.8rem;padding:2px">▲ <span style="font-size:.7rem">SUPER DIMENSION</span></div>
+        <div class="tower-level" style="width:280px;background:rgba(59,130,246,.08)">🏭 Factories <span class="tr-inline">Fabrikalar</span><div class="sd-tag" style="color:var(--super)">tools making tools</div></div>
+        <div style="color:var(--super);font-size:.8rem;padding:2px">▲ <span style="font-size:.7rem">SUPER²</span></div>
+        <div class="tower-level" style="width:220px;background:rgba(245,158,11,.08)">🤖 Robots <span class="tr-inline">Robotlar</span><div class="sd-tag" style="color:var(--super)">factories building factories</div></div>
+        <div style="color:var(--super);font-size:.8rem;padding:2px">▲ <span style="font-size:.7rem">SUPER³</span></div>
+        <div class="tower-level" style="width:180px;background:rgba(244,114,182,.1);border:2px solid rgba(244,114,182,.4);border-radius:12px 12px 0 0;color:var(--accent)">🧠 LLMs<div class="sd-tag" style="color:var(--super);font-weight:700">THE REASONING TOOL</div></div>
+      </div>
+    </div>
+  </div>
+  <p class="punchline" style="text-align:center;max-width:100%;font-size:1.05rem">Each level is a <span style="color:var(--super);font-weight:700">Super Dimension</span> of the one below — the system that produces the level beneath it.</p><span class="tr" style="text-align:center;display:block">Her seviye altindakinin <span style="color:var(--super)">Super Boyutu'dur</span> — alt seviyeyi ureten sistem.</span>
+  <div class="speaker-notes">Humans make tools. Factories are tools-that-make-tools — a Super Dimension. Robots build factories — Super². LLMs are the latest: the reasoning tool. Each level operates ON the level below.<div class="tr-note">Insanlar arac yapar. Fabrikalar araclari yapan araclardir — Super Boyut. Robotlar fabrikalari kurar — Super². LLM'ler en yenisi: muhakeme araci.</div></div>
+  <div class="slide-number">8 / 24</div>
+</div>
+
+<!-- ===== SLIDE 9: AI AS TOOL — USE IT WHERE WE SUCK ===== -->
+<div class="slide" id="s9">
+  <h2>AI Is a Tool. So Use It Like One. <span class="tr-inline">YZ Bir Arac. Oyle Kullan.</span></h2>
+  <div style="text-align:center;margin-top:20px">
+    <p style="font-size:1.6rem;color:var(--dim);font-weight:300">The question isn't "Is AI smarter than me?"</p><span class="tr" style="font-size:1rem">"YZ benden zeki mi?" degil soru.</span>
+    <p style="font-size:2rem;color:var(--accent);font-weight:700;margin-top:20px">The question is: "What am I BAD at<br>that AI is GOOD at?"</p><span class="tr" style="font-size:1.2rem">"Benim KOTU oldugum ama YZ'nin IYI oldugu ne var?"</span>
+    <div style="margin-top:30px">
+      <p style="font-size:1.2rem">Just like a telescope lets you see what your eyes can't...</p><span class="tr">Teleskop gozlerinin goremedigi seyi gosterdigi gibi...</span>
+      <p style="font-size:1.3rem;color:var(--accent);margin-top:8px;font-weight:600">Let AI do what your mind can't do well.</p><span class="tr" style="font-weight:600">YZ'ye zihninin iyi yapamadigini yaptir.</span>
+    </div>
+  </div>
+  <div class="speaker-notes">The reframe. Don't ask if AI is smarter. Ask: what am I bad at that AI is good at? A telescope for the things your mind can't reach.<div class="tr-note">Cerceve degisikligi. YZ daha mi zeki diye sorma. Benim kotu oldugum ama YZ'nin iyi oldugu ne var? Zihninin ulasamadigi seyler icin bir teleskop.</div></div>
+  <div class="slide-number">9 / 24</div>
+</div>
+
+<!-- ===== SLIDE 10: WHAT WE SUCK AT (THE 4 BUGS) ===== -->
+<div class="slide" id="s10">
+  <h2>What Humans Are Bad At <span class="tr-inline">Insanlarin Kotu Oldugu Seyler</span></h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+    <div class="card red"><h4>🐛 Bias &amp; Prejudice <span class="tr-inline">Onyargi</span></h4><p>Past experiences → wrong decisions. We see what we expect, not what's there.<br><span class="tr-inline">Gecmis deneyimler → yanlis kararlar. Olan degil, bekledigimizi goruruz.</span></p></div>
+    <div class="card red"><h4>🐛 Emotional Interference <span class="tr-inline">Duygusal Parazit</span></h4><p>Fear, pride, anger flood reasoning. The smartest people often have the worst arguments — most pride to protect.<br><span class="tr-inline">Korku, gurur, ofke muhakemeyi basar. En zeki insanlar cogu zaman en kotu argumanlara sahip.</span></p></div>
+    <div class="card red"><h4>🐛 Social Cost of Updating <span class="tr-inline">Fikir Degistirmenin Sosyal Maliyeti</span></h4><p>Changing your mind = "losing." Society punishes the very thing truth-seeking requires: admitting you were wrong.<br><span class="tr-inline">Fikir degistirmek = "kaybetmek." Toplum, hakikat arayisinin gerektirdigi seyi — hatani kabul etmeyi — cezalandirir.</span></p></div>
+    <div class="card red"><h4>🐛 Biological Limits <span class="tr-inline">Biyolojik Sinirlar</span></h4><p>Skip one night of sleep. Can you make good decisions? No. Biology has a timeout.<br><span class="tr-inline">Bir gece yatma. Dogru karar verebilir misin? Hayir. Biyolojinin zaman asimi var.</span></p></div>
+  </div>
+  <p class="punchline" style="text-align:center;max-width:100%">These are real bugs. And they are in ALL of us.</p><span class="tr" style="text-align:center;display:block">Bunlar gercek hatalar. Ve HEPIMIZDE var.</span>
+  <div class="speaker-notes">Four bugs. Bias, emotions, social cost of updating, biological fatigue. These aren't flaws of unintelligent people — they're in everyone.<div class="tr-note">Dort hata. Onyargi, duygular, fikir degistirmenin maliyeti, biyolojik yorgunluk. Bunlar zekasiz insanlarin degil, herkesin sorunlari.</div></div>
+  <div class="slide-number">10 / 24</div>
+</div>
+
+<!-- ===== SLIDE 11: THE KEY INSIGHT — BETTER REASONING, NOT OUR REASONING ===== -->
+<div class="slide" id="s11">
+  <div style="text-align:center;padding:20px 0">
+    <p style="font-size:1.6rem;color:var(--red);font-weight:300"><s>Don't make AI reason LIKE us.</s></p><span class="tr" style="font-size:1rem"><s>YZ'yi bizim gibi muhakeme ettirmeyin.</s></span>
+    <p style="font-size:2.2rem;color:var(--green);font-weight:700;margin-top:24px">Use AI to reason BETTER<br>where we FAIL.</p><span class="tr" style="font-size:1.2rem;font-weight:700;color:var(--green)">YZ'yi bizim BASARISIZ oldugumuz yerde DAHA IYI muhakeme icin kullanin.</span>
+    <div style="margin-top:30px;max-width:700px;margin-left:auto;margin-right:auto">
+      <p style="font-size:1.15rem">We already do this with every other tool: we don't build cars that walk like humans. We build cars that go where legs can't.</p><span class="tr">Bunu her aracla zaten yapiyoruz: insan gibi yuruyen araba yapmiyoruz. Bacaklarin gidemeyecegi yere giden araba yapiyoruz.</span>
+    </div>
+    <p style="margin-top:24px;font-size:1.2rem;color:var(--accent);font-weight:600">So: what's the domain where AI can reason better than us?</p><span class="tr" style="font-weight:600">Peki: YZ'nin bizden daha iyi muhakeme edebilecegi alan ne?</span>
+  </div>
+  <div class="speaker-notes">THE key insight. We don't make AI to think like us — we suck at thinking! We make AI to think BETTER where we fail. Like we don't make cars that walk. What domain is free from our bugs?<div class="tr-note">ANAHTAR fikir. YZ'yi bizim gibi dusundurmeye calismiyoruz — biz dusunmekte kotuyuz! YZ'yi basarisiz oldugumuz yerde DAHA IYI dusunmesi icin yapiyoruz. Hangi alan hatalarimizdan bagimsiz?</div></div>
+  <div class="slide-number">11 / 24</div>
+</div>
+
+<!-- ===== SLIDE 12: DIALECTICS = SUPER DIMENSION OF THINKING ===== -->
+<div class="slide" id="s12">
+  <h2>Dialectics: The Super Dimension of Thinking <span class="sd-badge">SUPER DIMENSION</span></h2><span class="tr">Diyalektik: Dusunmenin Super Boyutu</span>
+  <div class="two-col" style="margin-top:14px">
+    <div>
+      <div class="card super">
+        <h4 style="color:var(--super)">Thinking <span class="tr-inline">Dusunme</span></h4>
+        <p>Has biases, emotions, ego, fatigue<br><span class="tr-inline">Onyargi, duygu, ego, yorgunluk icerir</span></p>
+      </div>
+      <div style="text-align:center;color:var(--super);font-size:1rem;padding:4px">▲ SUPER DIMENSION ▲</div>
+      <div class="card super" style="border-color:var(--super);border-width:2px">
+        <h4 style="color:var(--super);font-size:1.1rem">Thinking ABOUT Thinking = DIALECTICS <span class="tr-inline">Dusunme HAKKINDA Dusunme = DIYALEKTIK</span></h4>
+        <p>Free from individual bugs — because the OTHER party catches your biases. The protocol itself is the error-correction layer.<br><span class="tr-inline">Bireysel hatalardan bagimsiz — cunku KARSI TARAF onyargillarini yakalar. Protokolun kendisi hata duzeltme katmanidir.</span></p>
+      </div>
+    </div>
+    <div>
+      <p class="big-quote" style="font-size:1.3rem">"You can be biased while thinking. But when you think about <em>how</em> to think — you've entered dialectics. And there, the other side exposes your bias immediately."</p><span class="tr">"Dusunurken onyargili olabilirsin. Ama nasil dusunecegini dusunuyorsan — diyalektige girmissindir. Orada karsi taraf onyargini hemen ortaya koyar."</span>
+      <p style="margin-top:16px;font-size:1.05rem;color:var(--super);font-weight:600">This is the domain where AI can help us most. Not thinking FOR us — but thinking ABOUT thinking WITH us.</p><span class="tr" style="color:var(--super)">YZ'nin bize en cok yardim edebilecegi alan bu. Bizim YERIMIZE dusunmek degil — bizimle BIRLIKTE dusunme HAKKINDA dusunmek.</span>
+    </div>
+  </div>
+  <div class="speaker-notes">Dialectics is the super dimension of thinking. Thinking has bugs. Thinking-about-thinking (dialectics) is above those bugs because the protocol catches them. THIS is where AI helps — not replacing our thinking, but elevating it.<div class="tr-note">Diyalektik dusunmenin super boyutudur. Dusunmenin hatalari var. Dusunme hakkinda dusunme (diyalektik) bu hatalarin ustundedir cunku protokol onlari yakalar. YZ burada yardim eder — dusuncemizi degistirmek degil, yuksseltmek.</div></div>
+  <div class="slide-number">12 / 24</div>
+</div>
+
+<!-- ===== SLIDE 13: THE TWO ROOMS ===== -->
+<div class="slide" id="s13">
+  <h2>The Two Rooms <span class="tr-inline">Iki Oda</span> <span class="tw-badge">THOUGHT WORM</span></h2>
+  <div class="two-col" style="margin-top:10px">
+    <div style="text-align:center">
+      <h3 style="color:var(--accent2);font-size:1.2rem">Room A — 1974</h3><p style="color:var(--dim);font-size:.9rem">Vint Cerf &amp; Bob Kahn</p>
+      <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:12px;padding:14px;margin-top:8px">
+        <div style="padding:8px;background:rgba(59,130,246,.1);border-radius:8px;margin-bottom:4px;font-weight:600;font-size:.9rem">Layer 3: Content <span class="tr-inline">Icerik</span></div>
+        <div style="padding:8px;background:rgba(59,130,246,.15);border-radius:8px;margin-bottom:4px;font-weight:600;font-size:.9rem">Layer 2: Protocol <span class="tr-inline">Protokol</span></div>
+        <div style="padding:8px;background:rgba(59,130,246,.2);border-radius:8px;font-weight:600;font-size:.9rem">Layer 1: Shared Medium <span class="tr-inline">Ortak Ortam</span></div>
+      </div>
+      <p style="font-size:.8rem;color:var(--dim);margin-top:6px">How machines exchange truth reliably</p>
+    </div>
+    <div style="text-align:center">
+      <h3 style="color:var(--accent);font-size:1.2rem">Room B — 399 BC</h3><p style="color:var(--dim);font-size:.9rem">Socrates <span class="tr-inline">Sokrates</span></p>
+      <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px;margin-top:8px">
+        <div style="padding:8px;background:rgba(245,158,11,.1);border-radius:8px;margin-bottom:4px;font-weight:600;font-size:.9rem">Layer 3: Understanding <span class="tr-inline">Anlayis</span></div>
+        <div style="padding:8px;background:rgba(245,158,11,.15);border-radius:8px;margin-bottom:4px;font-weight:600;font-size:.9rem">Layer 2: Rules of Engagement <span class="tr-inline">Kurallari</span></div>
+        <div style="padding:8px;background:rgba(245,158,11,.2);border-radius:8px;font-weight:600;font-size:.9rem">Layer 1: Shared Language <span class="tr-inline">Ortak Dil</span></div>
+      </div>
+      <p style="font-size:.8rem;color:var(--dim);margin-top:6px">How minds seek truth together</p>
+    </div>
+  </div>
+  <p class="punchline" style="text-align:center;max-width:100%;margin-top:14px;font-size:1.1rem">"Remove the labels. You can't tell them apart." <span class="tw-badge">THOUGHT WORM</span></p><span class="tr" style="text-align:center;display:block">"Etiketleri kaldirin. Birbirinden ayirt edemezsiniz."</span>
+  <p style="text-align:center;color:var(--worm);font-size:.9rem;margin-top:6px">The same pattern in two completely different domains — this is a Thought Worm jumping axes.</p><span class="tr" style="text-align:center;display:block;color:var(--worm)">Iki tamamen farkli alanda ayni oruntu — bu bir Fikir Solucani'nin eksen atlayisi.</span>
+  <div class="speaker-notes">Two rooms, 2400 years apart, same diagram. This is a Thought Worm — the same structural pattern appearing across different domains. TCP/IP and Dialectics solved the same problem independently.<div class="tr-note">Iki oda, 2400 yil arayla, ayni diyagram. Bu bir Fikir Solucani — farkli alanlarda ortaya cikan ayni yapisal oruntu.</div></div>
+  <div class="slide-number">13 / 24</div>
+</div>
+
+<!-- ===== SLIDE 14: TCP/IP DIALECTICS ===== -->
+<div class="slide" id="s14">
+  <h2>TCP/IP Dialectics <span class="tr-inline">TCP/IP Diyalektigi</span></h2>
+  <div style="display:flex;justify-content:center;margin-top:10px">
+    <div class="stack-diagram">
+      <div class="stack-layer"><div class="left"><div class="stack-label" style="color:var(--accent)">APPLICATION <span class="tr-inline">UYGULAMA</span></div><div class="stack-desc">HTTP, Email</div></div><div class="mid">⟷</div><div class="right"><div class="stack-label" style="color:var(--accent)">SYNTHESIS <span class="tr-inline">SENTEZ</span></div><div class="stack-desc">New understanding <span class="tr-inline">Yeni anlayis</span></div></div></div>
+      <div class="stack-layer"><div class="left"><div class="stack-label" style="color:var(--accent2)">TCP</div><div class="stack-desc">Reliable, ordered, acknowledged</div></div><div class="mid">⟷</div><div class="right"><div class="stack-label" style="color:var(--accent2)">STRUCTURED REASONING <span class="tr-inline">YAPILANDIRILMIS MUHAKEME</span></div><div class="stack-desc">Acknowledge, sequence, error-correct</div></div></div>
+      <div class="stack-layer"><div class="left"><div class="stack-label" style="color:var(--green)">IP</div><div class="stack-desc">Shared addressing</div></div><div class="mid">⟷</div><div class="right"><div class="stack-label" style="color:var(--green)">COMMON GROUND <span class="tr-inline">ORTAK ZEMIN</span></div><div class="stack-desc">Shared definitions <span class="tr-inline">Ortak tanimlar</span></div></div></div>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:16px;font-size:.95rem">Political debates fail at <strong style="color:var(--green)">Layer 1</strong> — same words, different meanings. <span class="tr-inline">Siyasi tartismalar Katman 1'de basarisiz — ayni kelimeler, farkli anlamlar.</span></p>
+  <p style="text-align:center;font-size:.95rem">Twitter fights = broken <strong style="color:var(--accent2)">TCP</strong> — no acknowledgment. Just raw packets screaming. <span class="tr-inline">Twitter kavgalari = bozuk TCP — onay yok. Ham paketler cagliyior.</span></p>
+  <div class="speaker-notes">The mapping. IP = Common Ground. TCP = Structured Reasoning. Application = Synthesis. Most debates fail at Layer 1.<div class="tr-note">Eslestirme. IP = Ortak Zemin. TCP = Yapilandirilmis Muhakeme. Uygulama = Sentez.</div></div>
+  <div class="slide-number">14 / 24</div>
+</div>
+
+<!-- ===== SLIDE 15: HEGELIAN HANDSHAKE ===== -->
+<div class="slide" id="s15">
+  <h2>The Hegelian Handshake <span class="tr-inline">Hegelci El Sikisma</span></h2>
+  <div style="display:flex;justify-content:center;margin-top:10px">
+    <table class="handshake-table" style="max-width:820px">
+      <tr><th></th><th style="color:var(--accent2)">TCP</th><th></th><th style="color:var(--accent)">Dialectics <span class="tr-inline">Diyalektik</span></th></tr>
+      <tr><td class="arrow">→</td><td><strong>SYN</strong><br><span style="color:var(--dim)">"I want to connect" <span class="tr-inline">"Baglanmak istiyorum"</span></span></td><td class="arrow">→</td><td><strong>THESIS <span class="tr-inline">TEZ</span></strong><br><span style="color:var(--dim)">"Here is what I believe" <span class="tr-inline">"Inancim bu"</span></span></td></tr>
+      <tr><td class="arrow">←</td><td><strong>SYN-ACK</strong><br><span style="color:var(--dim)">"I hear you" <span class="tr-inline">"Duydum"</span></span></td><td class="arrow">←</td><td><strong>ANTITHESIS <span class="tr-inline">ANTITEZ</span></strong><br><span style="color:var(--dim)">"Here's where it breaks" <span class="tr-inline">"Kirilma noktasi su"</span></span></td></tr>
+      <tr><td class="arrow">→</td><td><strong>ACK</strong><br><span style="color:var(--dim)">"Connected" <span class="tr-inline">"Baglanti kuruldu"</span></span></td><td class="arrow">→</td><td><strong style="color:var(--green)">SYNTHESIS <span class="tr-inline">SENTEZ</span></strong><br><span style="color:var(--dim)">"What we understand <em>together</em>" <span class="tr-inline">"Birlikte anladigimiz"</span></span></td></tr>
+    </table>
+  </div>
+  <p class="punchline" style="text-align:center;max-width:100%;margin-top:16px">"Not metaphors. Same structural requirements." <span class="tr-inline">"Metafor degil. Ayni yapisal gereksinimler."</span></p>
+  <div class="speaker-notes">SYN=Thesis. SYN-ACK=Antithesis. ACK=Synthesis. Without all three, connection fails.<div class="tr-note">SYN=Tez. SYN-ACK=Antitez. ACK=Sentez. Ucu olmadan baglanti basarisiz.</div></div>
+  <div class="slide-number">15 / 24</div>
+</div>
+
+<!-- ===== SLIDE 16: ERROR CORRECTION ===== -->
+<div class="slide" id="s16">
+  <h2>When the Protocol Breaks <span class="tr-inline">Protokol Bozuldugunda</span></h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+    <div class="card red"><h4>Fallacies = Corrupted Packets <span class="tr-inline">Safsatalar = Bozuk Paketler</span></h4><p>"That's not what I said. Retransmit." <span class="tr-inline">"Ben onu demedim. Tekrar gonder."</span></p></div>
+    <div class="card amber"><h4>Biases = Signal Noise <span class="tr-inline">Onyargilar = Sinyal Gurultusu</span></h4><p>Confirmation bias distorts the signal between minds. <span class="tr-inline">Dogrulama yanliligi zihinler arasi sinyali bozar.</span></p></div>
+    <div class="card" style="border-left:4px solid var(--dim)"><h4>Bad Faith = Dropped Connection <span class="tr-inline">Kotuniyet = Dusen Baglanti</span></h4><p>Arguing to win, not understand. Connection is dead. <span class="tr-inline">Anlamak icin degil kazanmak icin tartismak.</span></p></div>
+    <div class="card" style="border-left:4px solid var(--accent2)"><h4>Gish Gallop = DDoS Attack <span class="tr-inline">Arguman Yagmuru = DDoS</span></h4><p>15 arguments in 30 seconds = shutdown. <span class="tr-inline">30 saniyede 15 arguman = cokus.</span></p></div>
+  </div>
+  <div class="speaker-notes">Fallacies=corrupted packets. Biases=noise. Bad faith=dropped connection. Flooding=DDoS.<div class="tr-note">Safsatalar=bozuk paketler. Onyargilar=parazit. Kotuniyet=kopuk baglanti. Yagmur=DDoS.</div></div>
+  <div class="slide-number">16 / 24</div>
+</div>
+
+<!-- ===== SLIDE 17: THE STRANGE HOPE ===== -->
+<div class="slide" id="s17">
+  <h3 style="margin-bottom:10px">"This will make some of you uncomfortable." <span class="tr-inline">"Bu bazillarinizi rahatsiz edecek."</span></h3>
+  <table class="comparison-table" style="max-width:820px;margin-top:10px">
+    <tr><th style="text-align:left">Bug <span class="tr-inline">Hata</span></th><th style="color:var(--red)">Humans <span class="tr-inline">Insanlar</span></th><th style="color:var(--green)">AI Agents <span class="tr-inline">YZ Ajanlari</span></th></tr>
+    <tr><td>Bias / Identity <span class="tr-inline">Onyargi / Kimlik</span></td><td>Identity-locked. Can't update.<br><span class="tr-inline">Kimlige kilitli.</span></td><td>No ego. Updates without crisis.<br><span class="tr-inline">Ego yok. Krizsiz gunceller.</span></td></tr>
+    <tr><td>Emotions <span class="tr-inline">Duygular</span></td><td>Pride, fear corrupt signal.<br><span class="tr-inline">Gurur, korku sinyali bozar.</span></td><td>Clean signal. No grudges.<br><span class="tr-inline">Temiz sinyal. Kin yok.</span></td></tr>
+    <tr><td>Updating <span class="tr-inline">Guncelleme</span></td><td>Changing mind = "losing."<br><span class="tr-inline">Fikir degistirmek = "kaybetmek."</span></td><td>Updating = improving.<br><span class="tr-inline">Guncelleme = gelisme.</span></td></tr>
+    <tr><td>Endurance <span class="tr-inline">Dayaniklilik</span></td><td>Fatigue → collapse.<br><span class="tr-inline">Yorgunluk → cokus.</span></td><td>10,000 rounds. No degradation.<br><span class="tr-inline">10.000 tur. Bozulma yok.</span></td></tr>
+  </table>
+  <div style="margin-top:20px;text-align:center">
+    <p class="big-quote" style="font-size:1.35rem">"Machines might be better at value reasoning. Not because they're <em>smarter</em>. Because they're <em>less broken</em>."</p><span class="tr">"Makineler deger muhakemesinde daha iyi olabilir. Daha zeki degil. Daha az bozuk."</span>
+  </div>
+  <div class="speaker-notes">AI doesn't have our bugs. Not smarter — less broken. This is why AI can run the dialectical protocol better than we can.<div class="tr-note">YZ'de bizim hatalarimiz yok. Daha zeki degil — daha az bozuk.</div></div>
+  <div class="slide-number">17 / 24</div>
+</div>
+
+<!-- ===== SLIDE 18: THOUGHT WORM CONCEPT ===== -->
+<div class="slide" id="s18">
+  <h2>Thought Worms <span class="tr-inline">Fikir Solucanlari</span> <span class="tw-badge">THOUGHT WORM</span></h2>
+  <div class="two-col" style="margin-top:10px">
+    <div>
+      <div class="worm-connector">
+        <div class="card worm"><h4 style="color:var(--worm)">Layer 1 — Time-Resistant Core <span class="tr-inline">Zamana Direnen Oz</span></h4><p>Descartes didn't ask "what's wrong?" He asked: "What stays true in 10,000 years?" Answer: <em>Cogito ergo sum.</em><br><span class="tr-inline">Descartes "hangisi yanlis?" demedi. "10.000 yil sonra bile ne dogru kalir?" diye sordu. Cevap: <em>Dusunuyorum, oyleyse varim.</em></span></p></div>
+        <div class="card worm"><h4 style="color:var(--worm)">Layer 2 — Cross-Axis Jump <span class="tr-inline">Eksenler Arasi Gecis</span></h4><p>You notice the SAME PATTERN in a completely different domain. The worm jumps. TCP/IP = Dialectics. That was a thought worm.<br><span class="tr-inline">Tamamen farkli bir alanda AYNI ORUNTUYU fark edersiniz. Solucan atlar. TCP/IP = Diyalektik. Bu bir fikir solucaniydi.</span></p></div>
+        <div class="card worm" style="border-width:2px"><h4 style="color:var(--worm);font-size:1rem">Layer 3 — Super Dimension <span class="sd-badge">SUPER DIMENSION</span></h4><p>When you notice THAT you're noticing patterns — you've entered the super dimension. And that noticing itself becomes a new worm. The concept folds on itself.<br><span class="tr-inline">Oruntuleri fark ettiginizi FARK ETTIGINIZDE — super boyuta girmissinizdir. Ve bu fark etmenin kendisi yeni bir solucan olur. Kavram kendi ustune kivrilir.</span></p></div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:1.05rem;margin-bottom:12px">Thought Worms we've seen tonight:</p><span class="tr">Bu gece gordugumuz Fikir Solucanlari:</span>
+      <div style="font-size:.95rem;line-height:1.8;margin-top:8px">
+        <div style="color:var(--worm)">🐛 TCP/IP ↔ Dialectics</div>
+        <div style="color:var(--worm)">🐛 Tools → Factories → Robots → LLMs</div>
+        <div style="color:var(--worm)">🐛 Thinking → Thinking about thinking</div>
+        <div style="color:var(--worm)">🐛 Alignment paradox ↔ Human self-alignment failure</div>
+        <div style="color:var(--worm)">🐛 Ouroboros — evaluation IS the benchmark</div>
+      </div>
+      <p style="margin-top:16px;font-size:1rem;color:var(--worm);font-weight:600">The worm never stops. And noticing that it doesn't stop... is also a worm.</p><span class="tr" style="color:var(--worm)">Solucan hic durmuyor. Ve durmadigini fark etmek... o da bir solucan.</span>
+    </div>
+  </div>
+  <div class="speaker-notes">Thought Worms: Layer 1 = time-resistant truth. Layer 2 = pattern jumps across domains. Layer 3 = noticing the noticing = Super Dimension. The concept folds on itself.<div class="tr-note">Fikir Solucanlari: Katman 1 = zamana direnen gercek. Katman 2 = alanlar arasi oruntu atlamasi. Katman 3 = fark etmeyi fark etme = Super Boyut.</div></div>
+  <div class="slide-number">18 / 24</div>
+</div>
+
+<!-- ===== SLIDE 19: DIALECTICAL AI AGENTS ===== -->
+<div class="slide" id="s19">
+  <h2>Dialectical AI Agents <span class="tr-inline">Diyalektik YZ Ajanlari</span></h2>
+  <div class="two-col" style="margin-top:10px">
+    <div class="agent-flow">
+      <div class="agent-node axiom">⚡ AXIOM <span class="tr-inline">AKSIYOM</span></div>
+      <div class="agent-arrow">Self-evident truths ↓ <span class="tr-inline">Apaciik gercekler</span></div>
+      <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap"><div class="agent-node thesis">THESIS<br><span class="tr-inline">TEZ</span></div><div class="agent-node thesis">ANTITHESIS<br><span class="tr-inline">ANTITEZ</span></div><div class="agent-node thesis">HYPOTHESIS<br><span class="tr-inline">HIPOTEZ</span></div></div>
+      <div class="agent-arrow">↕ Hegelian Dialectic ↕</div>
+      <div class="agent-node synth">✦ SYNTHESIS <span class="tr-inline">SENTEZ</span> ✦</div>
+      <div style="margin-top:6px;color:var(--dim);font-size:.8rem">Contains truth in <strong style="color:var(--green)">NEITHER</strong> parent <span class="tr-inline"><strong style="color:var(--green)">HICBIRINDE</strong> olmayan gercek</span></div>
+    </div>
+    <div>
+      <p class="big-quote" style="font-size:1.2rem">"Two concepts in. Something <em>new</em> out — something in neither."</p><span class="tr">"Iki kavram girer. <em>Yeni</em> bir sey cikar — ikisinde de olmayan."</span>
+      <p style="margin-top:14px;font-size:1.2rem;font-weight:700;color:var(--accent)">THAT is intelligence. <span class="tr-inline">Zeka BUDUR.</span></p>
+      <p style="margin-top:14px;font-size:.95rem">Not AI reasoning like a broken human. AI reasoning <em>dialectically</em> — doing the part we can't do cleanly.</p><span class="tr">Bozuk bir insan gibi muhakeme eden YZ degil. <em>Diyalektik</em> muhakeme eden YZ — bizim temiz yapamadigimiz kismi yapan.</span>
+      <p style="margin-top:10px;font-size:.85rem;color:var(--dim)">From axioms → to propositions → to theories → to proofs → to laws. Why not?</p><span class="tr" style="font-size:.8rem">Aksiyomlardan → onermelere → teorilere → ispatlara → kanunlara. Neden olmasin?</span>
+    </div>
+  </div>
+  <div class="speaker-notes">I built this. Axiom agent generates truths. Agents argue dialectically. Synthesis contains what's in NEITHER parent. That emergence is intelligence. Not AI mimicking broken human reasoning — AI doing dialectics cleanly.<div class="tr-note">Ben bunu yaptim. Aksiyom ajani gercekleri uretir. Ajanlar diyalektik tartisir. Sentez hicbirinde olmayani icerir. Bu zekadır. Bozuk insan muhakemesini taklit eden degil — diyalektigi temiz yapan YZ.</div></div>
+  <div class="slide-number">19 / 24</div>
+</div>
+
+<!-- ===== SLIDE 20: SUPER DIMENSION MAP ===== -->
+<div class="slide" id="s20">
+  <h2>The Super Dimension Map <span class="sd-badge">SUPER DIMENSION</span> <span class="tw-badge">THOUGHT WORM</span></h2><span class="tr">Super Boyut Haritasi</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:12px">
+    <div class="card super" style="text-align:center"><h4 style="color:var(--super);font-size:.9rem">PHYSICAL TOOLS <span class="tr-inline">FIZIKSEL ARACLAR</span></h4><p style="font-size:.8rem">Tools → Factories → Robots<br><span class="tr-inline">Araclar → Fabrikalar → Robotlar</span></p><div style="color:var(--super);font-size:.7rem;margin-top:4px">Each level PRODUCES the one below</div></div>
+    <div class="card super" style="text-align:center"><h4 style="color:var(--super);font-size:.9rem">COGNITION <span class="tr-inline">BILIS</span></h4><p style="font-size:.8rem">Thinking → Thinking about thinking → Dialectics<br><span class="tr-inline">Dusunme → Dusunme hk. dusunme → Diyalektik</span></p><div style="color:var(--super);font-size:.7rem;margin-top:4px">Each level MONITORS the one below</div></div>
+    <div class="card super" style="text-align:center"><h4 style="color:var(--super);font-size:.9rem">IDEAS <span class="tr-inline">FIKIRLER</span></h4><p style="font-size:.8rem">Pattern → Noticing pattern → Noticing noticing<br><span class="tr-inline">Oruntu → Oruntu fark etme → Fark etmeyi fark etme</span></p><div style="color:var(--super);font-size:.7rem;margin-top:4px">Each level FOLDS onto itself</div></div>
+  </div>
+  <div style="text-align:center;margin-top:16px">
+    <p style="font-size:1.1rem;color:var(--worm)">🐛 The same worm crawls through all three columns.</p><span class="tr" style="color:var(--worm)">Ayni solucan uc sutunun da icinden geciyor.</span>
+    <p style="font-size:1.2rem;color:var(--super);font-weight:700;margin-top:10px">Super Dimension = the level that PRODUCES / MONITORS / FOLDS the level below.</p><span class="tr" style="color:var(--super)">Super Boyut = alt seviyeyi URETEN / IZLEYEN / KATLAYAN seviye.</span>
+  </div>
+  <p style="text-align:center;margin-top:10px;font-size:.95rem">And AI — the latest super dimension — can run the dialectical protocol that sits ABOVE our cognitive bugs.</p><span class="tr" style="text-align:center;display:block">Ve YZ — en son super boyut — bilissel hatalarimizin USTUNDE oturan diyalektik protokolu calistirabilir.</span>
+  <div class="speaker-notes">The Super Dimension pattern appears everywhere: physical tools, cognition, ideas. Same worm, different axes. AI is the latest super dimension — it runs the dialectical protocol above our bugs.<div class="tr-note">Super Boyut oruntusu her yerde: fiziksel araclar, bilis, fikirler. Ayni solucan, farkli eksenler. YZ en son super boyut.</div></div>
+  <div class="slide-number">20 / 24</div>
+</div>
+
+<!-- ===== SLIDE 21: FULL STACK ===== -->
+<div class="slide" id="s21">
+  <h2>The Full Stack for Civilization 2.0 <span class="tr-inline">Medeniyet 2.0 icin Tam Yigin</span></h2>
+  <div style="display:flex;justify-content:center;margin-top:16px">
+    <div class="full-stack">
+      <div class="fs-layer"><div class="icon">🔄</div><div><div class="label">THE OUROBOROS <span class="sd-badge">SUPER DIMENSION</span></div><div class="desc">Self-improving evaluation loop <span class="tr-inline">Kendini iyilestiren degerlendirme dongusu</span></div></div></div>
+      <div class="fs-layer"><div class="icon">🏛</div><div><div class="label">ANECDOTE — GitHub of Ideas <span class="tw-badge">THOUGHT WORM</span></div><div class="desc">Ideas stored, forked, combined — with lineage <span class="tr-inline">Fikirler kaydedilir, catallanir, birlestirilir — soy agiyla</span></div></div></div>
+      <div class="fs-layer"><div class="icon">🎓</div><div><div class="label">DIALECTICAL EDUCATION <span class="sd-badge">SUPER DIMENSION</span></div><div class="desc">Training humans to run the protocol <span class="tr-inline">Insanlari protokolu calistirmak icin egitmek</span></div></div></div>
+      <div class="fs-layer"><div class="icon">📡</div><div><div class="label">THE PROTOCOL</div><div class="desc">TCP/IP Dialectics — 2,400-year-old architecture <span class="tr-inline">2.400 yillik mimari</span></div></div></div>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:16px;font-size:1rem;max-width:800px;margin-left:auto;margin-right:auto">A <strong style="color:var(--accent)">civilization-scale infrastructure</strong> for collective reasoning — not AI thinking FOR us, but AI thinking WITH us, in the domain where we need the most help.</p><span class="tr" style="text-align:center;display:block">Kolektif muhakeme icin <strong style="color:var(--accent)">medeniyet olceginde altyapi</strong> — YZ bizim YERIMIZE degil, en cok yardima ihtiyac duydugumuz alanda BIRLIKTE dusunuyor.</span>
+  <div class="speaker-notes">The full stack. Protocol → Education → Anecdote → Ouroboros. Each is a super dimension of the one below. Not AI replacing us — AI partnering with us where we're weakest.<div class="tr-note">Tam yigin. Protokol → Egitim → Anecdote → Ouroboros. Her biri altindakinin super boyutu. YZ bizi degistirmiyor — en zayif oldugumuz yerde bizimle is birligi yapiyor.</div></div>
+  <div class="slide-number">21 / 24</div>
+</div>
+
+<!-- ===== SLIDE 22: THE OUROBOROS ===== -->
+<div class="slide" id="s22">
+  <h2>The Ouroboros <span class="tr-inline">Kendi Kuyrugunu Yiyen Yilan</span> <span class="sd-badge">SUPER DIMENSION</span> <span class="tw-badge">THOUGHT WORM</span></h2>
+  <div class="two-col">
+    <div style="display:flex;justify-content:center">
+      <div class="ouroboros-ring">
+        <div class="node top" style="color:var(--accent)">EVALUATE <span class="tr-inline">DEGERLENDIR</span></div>
+        <div class="node right" style="color:var(--green)">BETTER JUDGES <span class="tr-inline">DAHA IYI YARGILAYANLAR</span></div>
+        <div class="node bottom" style="color:var(--accent2)">BETTER SYNTHESES <span class="tr-inline">DAHA IYI SENTEZLER</span></div>
+        <div class="snake">🐍</div>
+        <div class="caption">The worm that eats itself<br><span class="tr-inline">Kendini yiyen solucan</span></div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:1rem;line-height:1.6">Better models → better evaluations → better syntheses → demand even better evaluations.</p><span class="tr">Daha iyi modeller → daha iyi degerlendirmeler → daha iyi sentezler → daha da iyi degerlendirme talebi.</span>
+      <p style="font-size:1rem;line-height:1.6;margin-top:10px">The evaluation system <strong style="color:var(--accent)">IS</strong> the alignment system <strong style="color:var(--accent)">IS</strong> the benchmark.</p><span class="tr">Degerlendirme sistemi = hizalanma sistemi = benchmark.</span>
+      <p class="punchline" style="margin-top:12px;font-size:1rem">"Designed to judge ideas — accidentally became the judge of minds."</p><span class="tr">"Fikirleri yargilamak icin tasarlandi — kazara zihinlerin yargici oldu."</span>
+      <p style="margin-top:12px;font-size:.9rem;color:var(--worm)">🐛 This is the ultimate Thought Worm — the system that evaluates itself by the quality of its own evaluations. The worm eats its own tail.</p><span class="tr" style="color:var(--worm)">Bu nihai Fikir Solucani — kendi degerlendirmelerinin kalitesiyle kendini degerlendiren sistem. Solucan kendi kuyrugunu yiyor.</span>
+    </div>
+  </div>
+  <div class="speaker-notes">The Ouroboros: evaluation IS intellectual work. Models that evaluate best ARE the best. The system improves itself. The ultimate Thought Worm and Super Dimension — it folds on itself.<div class="tr-note">Ouroboros: degerlendirme zaten entelektuel istir. En iyi degerlendiren en iyi modeldir. Sistem kendini iyilestirir.</div></div>
+  <div class="slide-number">22 / 24</div>
+</div>
+
+<!-- ===== SLIDE 23: CLOSING ===== -->
+<div class="slide" id="s23">
+  <div class="fade-lines" style="max-width:720px;margin:0 auto;text-align:center">
+    <p style="color:var(--dim)">"The protocol is 2,400 years old.</p>
+    <p style="color:var(--tr);font-size:1.1rem;font-style:italic">(Protokol 2.400 yasinda.)</p>
+    <p style="color:var(--dim)">The infrastructure is new.</p>
+    <p style="color:var(--tr);font-size:1.1rem;font-style:italic">(Altyapi yeni.)</p>
+    <p>And for the first time in history, we have partners —</p>
+    <p style="color:var(--tr);font-size:1.1rem;font-style:italic">(Ve tarihte ilk kez, ortaklarimiz var —)</p>
+    <p style="color:var(--accent)">not to think FOR us, but to think BETTER where we fail —</p>
+    <p style="color:var(--tr);font-size:1.1rem;font-style:italic">(bizim YERIMIZE dusunmek icin degil, basarisiz oldugumuz yerde DAHA IYI dusunmek icin —)</p>
+    <p style="font-weight:600">artificial minds, free of ego, free of fatigue, free of broken reasoning —</p>
+    <p style="color:var(--tr);font-size:1.1rem;font-style:italic;font-weight:600">(yapay zihinler, egodan, yorgunluktan, bozuk muhakemeden bagimsiz —)</p>
+    <p style="font-weight:700;color:var(--accent)">who can run the super dimension with us."</p>
+    <p style="color:var(--tr);font-size:1.1rem;font-style:italic;font-weight:700">(super boyutu bizimle birlikte calistirabilen.)</p>
+  </div>
+  <div class="speaker-notes">Deliver slowly. Each line lands. The new line — "not to think FOR us, but BETTER where we fail" — is the thesis of the whole talk.<div class="tr-note">Yavas konusun. Her satir yerine otursun. Yeni satir — "YERIMIZE degil, basarisiz oldugumuz yerde DAHA IYI" — tum sunumun tezi.</div></div>
+  <div class="slide-number">23 / 24</div>
+</div>
+
+<!-- ===== SLIDE 24: FINAL ===== -->
+<div class="slide" id="s24">
+  <div style="text-align:center">
+    <p class="big-quote" style="max-width:720px;margin:0 auto;font-size:1.9rem">"We are not building Civilization 2.0 by knowing more.<br><br>We are building it by <em>reasoning better — together</em>."</p><span class="tr" style="font-size:1.2rem;display:block;margin-top:12px">"Medeniyet 2.0'i daha cok bilerek degil,<br>daha iyi muhakeme ederek — birlikte insa ediyoruz."</span>
+    <div class="dots-anim" style="justify-content:center;margin-top:30px"><div class="dot"></div><div class="dot-line"></div><div class="dot" style="background:var(--accent2)"></div><div class="dot-line"></div><div class="dot" style="background:var(--green)"></div></div>
+    <h1 class="glow" style="font-size:2.2rem;margin-top:20px">THE PROTOCOL</h1>
+    <p style="color:var(--dim);margin-top:20px;font-size:1rem">Thank you. <span class="tr-inline">Tesekkurler.</span></p>
+  </div>
+  <div class="speaker-notes">Silence. Let it sit. "Thank you." / "Tesekkurler."</div>
+  <div class="slide-number">24 / 24</div>
+</div>
+
+<div class="nav-hint" id="navHint">← → navigate | N = notes | F = fullscreen | T = toggle Turkish</div>
+
+<script>
+const slides=document.querySelectorAll('.slide');let current=0,notesVisible=false;
+function showSlide(n){slides[current].classList.remove('active');current=Math.max(0,Math.min(n,slides.length-1));slides[current].classList.add('active');document.getElementById('progressBar').style.width=((current/(slides.length-1))*100)+'%';if(notesVisible){document.querySelectorAll('.speaker-notes').forEach(s=>s.classList.remove('show'));const notes=slides[current].querySelector('.speaker-notes');if(notes)notes.classList.add('show')}}
+function toggleTurkish(){document.body.classList.toggle('hide-tr');document.getElementById('langToggle').classList.toggle('tr-hidden')}
+document.getElementById('langToggle').addEventListener('click',e=>{e.stopPropagation();toggleTurkish()});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();showSlide(current+1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();showSlide(current-1)}else if(e.key==='n'||e.key==='N'){notesVisible=!notesVisible;document.querySelectorAll('.speaker-notes').forEach(s=>s.classList.remove('show'));if(notesVisible){const notes=slides[current].querySelector('.speaker-notes');if(notes)notes.classList.add('show')}}else if(e.key==='t'||e.key==='T'){toggleTurkish()}else if(e.key==='f'||e.key==='F'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen()}else if(e.key==='Home'){showSlide(0)}else if(e.key==='End'){showSlide(slides.length-1)}});
+let touchStartX=0;document.addEventListener('touchstart',e=>{touchStartX=e.changedTouches[0].screenX});document.addEventListener('touchend',e=>{const diff=e.changedTouches[0].screenX-touchStartX;if(diff<-50)showSlide(current+1);else if(diff>50)showSlide(current-1)});
+document.addEventListener('click',e=>{if(e.target.closest('.lang-toggle'))return;if(e.clientX>window.innerWidth/2)showSlide(current+1);else showSlide(current-1)});
+setTimeout(()=>{document.getElementById('navHint').style.opacity='0'},6000);
+</script>
+</body>
+</html>

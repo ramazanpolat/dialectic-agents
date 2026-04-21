@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Crucible — Live Dialectic Evaluation Engine</title>
+<style>
+:root {
+  --bg: #08080c;
+  --surface: #101018;
+  --surface2: #181824;
+  --surface3: #20202e;
+  --border: #2a2a3a;
+  --text: #e0e0e8;
+  --dim: #6a6a80;
+  --accent: #f77f00;
+  --fire1: #f77f00;
+  --fire2: #fc4e2a;
+  --fire3: #ffbe0b;
+  --green: #06d6a0;
+  --amber: #ffd166;
+  --red: #ef476f;
+  --blue: #118ab2;
+  --purple: #6c5ce7;
+  --logos: #00b894;
+  --axiom: #6c5ce7;
+  --propo: #fdcb6e;
+  --ori: #e17055;
+  --tribunal: #0984e3;
+  --hypothex: #d63031;
+  --synthesis: #00cec9;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'SF Mono','Fira Code','Cascadia Code',monospace; min-height:100vh; }
+
+/* Loading Overlay */
+#overlay {
+  position:fixed; inset:0; background:rgba(8,8,12,0.95);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:16px; z-index:200; font-size:13px; color:var(--dim);
+  transition:opacity 0.5s;
+}
+#overlay.hidden { opacity:0; pointer-events:none; }
+#overlay .title { font-size:18px; color:var(--fire1); letter-spacing:3px; text-transform:uppercase; font-weight:700; }
+.progress-bar { width:320px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+#progress-fill { height:100%; background:linear-gradient(90deg, var(--fire1), var(--fire2)); border-radius:2px; transition:width 0.3s; width:5%; }
+#progress-text { font-size:11px; color:var(--dim); }
+#overlay .error-state { color:var(--red); font-size:12px; text-align:center; }
+#overlay .btn-retry {
+  background:var(--surface2); border:1px solid var(--fire1); color:var(--fire1);
+  padding:8px 20px; font-size:12px; font-family:inherit; border-radius:4px;
+  cursor:pointer; margin-top:8px;
+}
+#overlay .btn-retry:hover { background:rgba(247,127,0,0.1); }
+
+/* Toast */
+.toast {
+  position:fixed; bottom:24px; right:24px; background:var(--surface2);
+  border:1px solid var(--green); border-radius:8px; padding:10px 18px;
+  font-size:12px; color:var(--green); z-index:1000;
+  opacity:0; transform:translateY(10px); transition:all 0.3s; pointer-events:none;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+
+/* Header */
+.header {
+  padding:20px 32px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  background:linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+}
+.header h1 { font-size:16px; font-weight:700; letter-spacing:3px; text-transform:uppercase; }
+.header h1 span { color:var(--fire1); }
+.header .subtitle { font-size:10px; color:var(--dim); letter-spacing:2px; text-transform:uppercase; margin-top:2px; }
+.header-right { display:flex; align-items:center; gap:16px; }
+.header .stat { font-size:11px; color:var(--dim); }
+.header .stat b { color:var(--fire3); }
+.live-indicator { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--dim); }
+.live-dot { width:7px; height:7px; border-radius:50%; background:#636e72; transition:background 0.3s; }
+.live-dot.fetching { background:var(--amber); animation:pulse 0.8s infinite; }
+.live-dot.live     { background:var(--green); }
+.live-dot.error    { background:var(--red); }
+
+/* Input area */
+.input-area {
+  padding:24px 32px; border-bottom:1px solid var(--border); background:var(--surface);
+}
+.input-label { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--dim); margin-bottom:8px; }
+textarea {
+  width:100%; height:100px; background:var(--bg); border:1px solid var(--border); color:var(--text);
+  padding:14px 16px; font-size:14px; font-family:inherit; border-radius:6px; resize:vertical; outline:none;
+  line-height:1.6; transition:border-color 0.3s;
+}
+textarea:focus { border-color:var(--fire1); box-shadow:0 0 20px rgba(247,127,0,0.1); }
+textarea::placeholder { color:var(--dim); }
+.input-actions { display:flex; gap:10px; margin-top:12px; align-items:center; }
+.btn-evaluate {
+  background:linear-gradient(135deg, var(--fire1), var(--fire2));
+  border:none; color:#fff; padding:10px 28px; font-size:13px; font-family:inherit;
+  font-weight:700; border-radius:6px; cursor:pointer; letter-spacing:1px;
+  transition:all 0.3s; text-transform:uppercase;
+}
+.btn-evaluate:hover { box-shadow:0 0 30px rgba(247,127,0,0.3); transform:translateY(-1px); }
+.btn-evaluate:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+.btn-secondary {
+  background:var(--surface2); border:1px solid var(--border); color:var(--dim);
+  padding:8px 16px; font-size:11px; font-family:inherit; border-radius:4px; cursor:pointer;
+}
+.btn-secondary:hover { color:var(--text); border-color:var(--dim); }
+
+/* Main content */
+.main-content {
+  display:grid;
+  grid-template-columns:340px 1fr;
+  min-height:calc(100vh - 280px);
+}
+
+/* Left: Verdict card */
+.verdict-panel {
+  border-right:1px solid var(--border); background:var(--surface); overflow-y:auto;
+}
+.verdict-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color:var(--dim); font-size:12px; gap:12px; padding:32px; text-align:center;
+}
+.verdict-empty .icon { font-size:48px; opacity:0.15; }
+.verdict-card { padding:0; }
+.verdict-section { padding:14px 20px; border-bottom:1px solid var(--border); }
+.verdict-section h3 { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--dim); margin-bottom:8px; }
+.verdict-classification { font-size:22px; font-weight:800; text-transform:uppercase; letter-spacing:2px; line-height:1.2; }
+.verdict-subtitle { font-size:11px; color:var(--dim); margin-top:4px; }
+.verdict-badge {
+  display:inline-block; padding:4px 12px; border-radius:4px;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+}
+.badge-apriori      { background:rgba(17,138,178,0.15);  color:var(--blue); }
+.badge-aposteriori  { background:rgba(225,112,85,0.15);  color:var(--ori); }
+.badge-mixed        { background:rgba(108,92,231,0.15);  color:var(--purple); }
+.badge-valid        { background:rgba(6,214,160,0.15);   color:var(--green); }
+.badge-plausible    { background:rgba(255,209,102,0.15); color:var(--amber); }
+.badge-contradicted { background:rgba(239,71,111,0.15);  color:var(--red); }
+.badge-novel        { background:rgba(0,206,201,0.15);   color:var(--synthesis); }
+
+.related-item {
+  display:flex; align-items:center; gap:8px; padding:6px 0; font-size:11px;
+}
+.related-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.related-id { font-weight:600; color:var(--text); }
+.related-title { color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.related-score { margin-left:auto; font-size:10px; color:var(--dim); }
+
+.recommendation-box {
+  background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+  padding:12px; font-size:12px; line-height:1.6;
+}
+.recommendation-box .action { color:var(--fire3); font-weight:700; }
+
+/* Right: Pipeline results */
+.pipeline-panel { overflow-y:auto; background:var(--bg); }
+.pipeline-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100%; color:var(--dim); font-size:12px; gap:8px;
+}
+
+.test-card { border-bottom:1px solid var(--border); overflow:hidden; }
+.test-header {
+  display:flex; align-items:center; gap:12px; padding:14px 20px;
+  cursor:pointer; transition:background 0.15s;
+}
+.test-header:hover { background:var(--surface2); }
+.test-number {
+  width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; flex-shrink:0; border:2px solid var(--border); transition:all 0.5s;
+}
+.test-number.pass    { border-color:var(--green);  color:var(--green); }
+.test-number.warn    { border-color:var(--amber);  color:var(--amber); }
+.test-number.fail    { border-color:var(--red);    color:var(--red); }
+.test-number.running { border-color:var(--fire1);  color:var(--fire1); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.test-name   { font-size:12px; font-weight:600; flex:1; }
+.test-agent  { font-size:9px; text-transform:uppercase; letter-spacing:1px; }
+.test-result-badge { font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
+.test-body {
+  padding:0 20px 16px 60px; font-size:12px; line-height:1.8; color:var(--dim); display:none;
+}
+.test-body.open { display:block; }
+.test-body .finding { padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+.test-body .finding-label { color:var(--text); font-weight:600; }
+.term-tag {
+  display:inline-block; padding:2px 8px; margin:2px; border-radius:4px; font-size:10px; border:1px solid;
+}
+.term-defined   { border-color:var(--green);  color:var(--green);  background:rgba(6,214,160,0.08); }
+.term-undefined { border-color:var(--red);    color:var(--red);    background:rgba(239,71,111,0.08); }
+.term-partial   { border-color:var(--amber);  color:var(--amber);  background:rgba(255,209,102,0.08); }
+
+/* Mini graph */
+.mini-graph {
+  padding:16px 20px; border-top:1px solid var(--border); background:var(--surface);
+  display:none;
+}
+.mini-graph-label {
+  font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--dim); margin-bottom:10px;
+}
+#mini-canvas {
+  width:100%; height:140px; border-radius:4px; background:var(--bg); display:block;
+}
+
+/* History section (full-width bottom panel) */
+.history-section {
+  display:none;
+  border-top:2px solid var(--border);
+  background:var(--surface); padding:20px 32px;
+}
+.history-section h3 {
+  font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--dim); margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.history-section h3 .count { color:var(--fire3); }
+#history-list { display:flex; flex-direction:column; gap:4px; }
+.history-item {
+  display:flex; align-items:center; gap:12px; padding:8px 12px; font-size:11px;
+  cursor:pointer; border-radius:4px; border:1px solid transparent; transition:all 0.15s;
+}
+.history-item:hover { background:var(--surface2); border-color:var(--border); color:var(--fire3); }
+.history-num { font-size:9px; color:var(--dim); min-width:24px; text-align:right; }
+.history-badge {
+  font-size:9px; padding:2px 6px; border-radius:3px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0;
+}
+.history-input { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); }
+.history-verdict { font-weight:600; font-size:10px; flex-shrink:0; }
+
+/* Animation */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.animate-in { animation:fadeIn 0.3s ease-out; }
+@keyframes fireGlow { 0%,100%{box-shadow:0 0 20px rgba(247,127,0,0.2)} 50%{box-shadow:0 0 40px rgba(247,127,0,0.4)} }
+
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="overlay">
+  <div class="title">The Crucible</div>
+  <div id="overlay-msg">Loading knowledge base...</div>
+  <div class="progress-bar"><div id="progress-fill"></div></div>
+  <div id="progress-text">Connecting to local server</div>
+  <div id="overlay-error" style="display:none">
+    <div class="error-state" id="overlay-error-msg"></div>
+    <button class="btn-retry" onclick="retryLoad()">Retry</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <div>
+    <h1><span>The Crucible</span></h1>
+    <div class="subtitle">Claude-Powered Live Evaluation Engine</div>
+  </div>
+  <div class="header-right">
+    <div class="live-indicator">
+      <div class="live-dot" id="live-dot"></div>
+      <span id="live-status">Initializing...</span>
+    </div>
+    <div class="stat">Knowledge base: <b id="kb-count">0</b> artifacts across <b>9</b> agents</div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-label">Submit a raw idea, claim, or argument for evaluation</div>
+  <textarea id="input-text" placeholder="Enter any sentence or claim...&#10;&#10;Examples:&#10;&#8226; &quot;Power structures tend to make themselves invisible&quot;&#10;&#8226; &quot;Consciousness is substrate-independent&quot;&#10;&#8226; &quot;All men are mortal. Socrates is a man. Therefore, Socrates is mortal.&quot;"></textarea>
+  <div class="input-actions">
+    <button class="btn-evaluate" id="btn-eval" onclick="runEvaluation()">Evaluate</button>
+    <button class="btn-secondary" onclick="clearInput()">Clear</button>
+    <button class="btn-secondary" onclick="loadExample(0)">Example 1</button>
+    <button class="btn-secondary" onclick="loadExample(1)">Example 2</button>
+    <button class="btn-secondary" onclick="loadExample(2)">Example 3</button>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="verdict-panel" id="verdict-panel">
+    <div class="verdict-empty">
+      <div class="icon">&#x1f525;</div>
+      <div>Loading knowledge base...<br>Please wait</div>
+    </div>
+  </div>
+  <div class="pipeline-panel" id="pipeline-panel">
+    <div class="pipeline-empty">
+      <div>Loading artifacts from server...</div>
+    </div>
+    <div class="mini-graph" id="mini-graph">
+      <div class="mini-graph-label">Dependency Context &mdash; where this input would connect</div>
+      <canvas id="mini-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- History panel: full-width bottom section -->
+<div class="history-section" id="history-section">
+  <h3>Evaluation History <span class="count" id="history-count"></span></h3>
+  <div id="history-list"></div>
+</div>
+
+<script>
+// ============================================================
+// AGENT REGISTRY
+// ============================================================
+const AGENTS = {
+  logos:     { name:'Logos',     color:'#00b894' },
+  axiom:     { name:'Axiom',     color:'#6c5ce7' },
+  propo:     { name:'Propo',     color:'#fdcb6e' },
+  ori:       { name:'Ori',       color:'#e17055' },
+  tribunal:  { name:'Tribunal',  color:'#0984e3' },
+  hypothex:  { name:'Hypothex',  color:'#d63031' },
+  theorica:  { name:'Theorica',  color:'#e84393' },
+  synthesis: { name:'Synthesis', color:'#00cec9' },
+  watcher:   { name:'Watcher',   color:'#636e72' },
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let ARTIFACTS = [];
+let artifactMap = {};
+let history = [];
+
+// ============================================================
+// EXAMPLES
+// ============================================================
+const EXAMPLES = [
+  "All men are mortal. Socrates is a man. Therefore, Socrates is mortal.",
+  "Consciousness is substrate-independent \u2014 it can exist on silicon just as on carbon",
+  "Power structures tend to make themselves invisible"
+];
+function loadExample(i) { document.getElementById('input-text').value = EXAMPLES[i]; }
+function clearInput() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('verdict-panel').innerHTML =
+    '<div class="verdict-empty"><div class="icon">&#x1f525;</div><div>Throw an idea into the crucible<br>and watch it burn or survive</div></div>';
+  resetPipelinePanel();
+}
+function resetPipelinePanel() {
+  const pp = document.getElementById('pipeline-panel');
+  const mg = document.getElementById('mini-graph');
+  pp.innerHTML = '<div class="pipeline-empty"><div>Awaiting input...</div></div>';
+  if (mg) { mg.style.display = 'none'; pp.appendChild(mg); }
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function setProgress(pct, msg, subMsg) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('overlay-msg').textContent = msg;
+  if (subMsg !== undefined) document.getElementById('progress-text').textContent = subMsg;
+}
+
+function setStatus(msg, type) {
+  document.getElementById('live-dot').className = 'live-dot ' + (type || 'live');
+  document.getElementById('live-status').textContent = msg;
+}
+
+function showToast(msg, dur) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur || 3500);
+}
+
+function rebuildMap() {
+  artifactMap = {};
+  ARTIFACTS.forEach(a => { artifactMap[a.id] = a; });
+  document.getElementById('kb-count').textContent = ARTIFACTS.length;
+}
+
+function showError(msg) {
+  document.getElementById('overlay-error-msg').textContent = msg;
+  document.getElementById('overlay-error').style.display = 'block';
+  document.getElementById('overlay-msg').textContent = 'Failed to load knowledge base';
+}
+
+function retryLoad() {
+  document.getElementById('overlay-error').style.display = 'none';
+  initialLoad();
+}
+
+function timeStr() { return new Date().toLocaleTimeString(); }
+
+function setTestRunning(n) {
+  document.getElementById('test-num-' + n).className = 'test-number running';
+}
+function setTestDone(n, status, label) {
+  document.getElementById('test-num-' + n).className = 'test-number ' + status;
+  const badge = document.getElementById('test-badge-' + n);
+  badge.style.display = 'inline-block';
+  badge.style.background = status==='pass' ? 'rgba(6,214,160,0.15)' : status==='warn' ? 'rgba(255,209,102,0.15)' : 'rgba(239,71,111,0.15)';
+  badge.style.color = status==='pass' ? 'var(--green)' : status==='warn' ? 'var(--amber)' : 'var(--red)';
+  badge.textContent = label;
+}
+function toggleTest(n) {
+  document.getElementById('test-body-' + n).classList.toggle('open');
+}
+
+// ============================================================
+// INITIAL LOAD — from local server
+// ============================================================
+async function initialLoad() {
+  setStatus('Loading...', 'fetching');
+  setProgress(30, 'Loading artifacts from server...');
+
+  try {
+    const resp = await fetch('/api/artifacts');
+    if (!resp.ok) throw new Error('Server returned ' + resp.status);
+    ARTIFACTS = await resp.json();
+  } catch (e) {
+    showError('Server connection failed: ' + e.message + '\n\nMake sure crucible-server.py is running on port 3456');
+    setStatus('Error', 'error');
+    return;
+  }
+
+  rebuildMap();
+
+  setProgress(100, 'Done!', ARTIFACTS.length + ' artifacts loaded');
+  setTimeout(() => document.getElementById('overlay').classList.add('hidden'), 500);
+
+  // Update UI to ready state
+  const kbNote = ARTIFACTS.length === 0
+    ? '<div style="color:var(--amber);font-size:11px;margin-top:8px">No artifacts loaded \u2014 evaluation will run without KB context</div>'
+    : '';
+  document.getElementById('verdict-panel').innerHTML =
+    '<div class="verdict-empty"><div class="icon">&#x1f525;</div><div>Throw an idea into the crucible<br>and watch it burn or survive</div>' + kbNote + '</div>';
+
+  const pp = document.getElementById('pipeline-panel');
+  const mg = document.getElementById('mini-graph');
+  pp.innerHTML = '<div class="pipeline-empty"><div>Awaiting input...</div></div>';
+  if (mg) { mg.style.display = 'none'; pp.appendChild(mg); }
+  if (!document.getElementById('mini-graph')) {
+    const mgEl = document.createElement('div');
+    mgEl.className = 'mini-graph';
+    mgEl.id = 'mini-graph';
+    mgEl.innerHTML = '<div class="mini-graph-label">Dependency Context \u2014 where this input would connect</div><canvas id="mini-canvas"></canvas>';
+    mgEl.style.display = 'none';
+    pp.appendChild(mgEl);
+  }
+
+  setStatus(ARTIFACTS.length + ' artifacts \xb7 ' + timeStr(), 'live');
+}
+
+// ============================================================
+// MAIN EVALUATE FUNCTION
+// ============================================================
+async function runEvaluation() {
+  const text = document.getElementById('input-text').value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('btn-eval');
+  btn.disabled = true;
+  btn.textContent = 'EVALUATING...';
+
+  try {
+    await _runEvaluation(text);
+  } catch (e) {
+    console.error('Evaluation error:', e);
+    document.getElementById('verdict-panel').innerHTML =
+      '<div class="verdict-empty"><div class="icon">\u26a0</div><div style="color:var(--red)">Error: ' + escHtml(e.message) + '</div></div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Evaluate';
+  }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function _runEvaluation(text) {
+  const pp = document.getElementById('pipeline-panel');
+  const vp = document.getElementById('verdict-panel');
+
+  // Build pipeline skeleton
+  const existingMg = document.getElementById('mini-graph');
+  const tests = [
+    { num:1, name:'Term Analysis',            agent:'Logos',     color:'var(--logos)' },
+    { num:2, name:'Axiom Compatibility',      agent:'Axiom',     color:'var(--axiom)' },
+    { num:3, name:'Proposition Form',         agent:'Propo',     color:'var(--propo)' },
+    { num:4, name:'Epistemic Classification', agent:'Ori',       color:'var(--ori)' },
+    { num:5, name:'Deductive Assessment',     agent:'Tribunal',  color:'var(--tribunal)' },
+    { num:6, name:'Empirical Assessment',     agent:'Hypothex',  color:'var(--hypothex)' },
+    { num:7, name:'System Integration',       agent:'Synthesis', color:'var(--synthesis)' },
+  ];
+
+  pp.innerHTML = tests.map(t => '\
+    <div class="test-card" id="test-' + t.num + '">\
+      <div class="test-header" onclick="toggleTest(' + t.num + ')">\
+        <div class="test-number" id="test-num-' + t.num + '">' + t.num + '</div>\
+        <div>\
+          <div class="test-name">' + t.name + '</div>\
+          <div class="test-agent" style="color:' + t.color + '">' + t.agent + '</div>\
+        </div>\
+        <div class="test-result-badge" id="test-badge-' + t.num + '" style="display:none"></div>\
+      </div>\
+      <div class="test-body" id="test-body-' + t.num + '"></div>\
+    </div>').join('');
+
+  // Re-append mini-graph
+  if (existingMg) {
+    existingMg.style.display = 'none';
+    pp.appendChild(existingMg);
+  } else {
+    const mg = document.createElement('div');
+    mg.className = 'mini-graph';
+    mg.id = 'mini-graph';
+    mg.innerHTML = '<div class="mini-graph-label">Dependency Context \u2014 where this input would connect</div><canvas id="mini-canvas"></canvas>';
+    mg.style.display = 'none';
+    pp.appendChild(mg);
+  }
+
+  // Show all tests as pending (running state on test 1)
+  setTestRunning(1);
+  vp.innerHTML = '<div class="verdict-empty"><div class="icon" style="animation:pulse 1s infinite">&#x1f525;</div><div>Sending to Claude for evaluation...<br><span style="font-size:10px;color:var(--dim)">This may take 15\u201345 seconds</span></div></div>';
+
+  // Call the server
+  const resp = await fetch('/api/evaluate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ claim: text })
+  });
+
+  const result = await resp.json();
+  if (result.error) throw new Error(result.error);
+
+  // Animate results sequentially
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  for (const test of result.tests) {
+    const n = test.num;
+    setTestRunning(n);
+    await delay(300);
+    setTestDone(n, test.status, test.label);
+    document.getElementById('test-body-' + n).innerHTML = test.body_html;
+    // Auto-open first test and any failures
+    if (n === 1 || test.status === 'fail') {
+      document.getElementById('test-body-' + n).classList.add('open');
+    }
+    await delay(200);
+  }
+
+  // Render verdict from server data
+  await delay(300);
+  renderVerdict(result);
+
+  // Mini graph
+  await delay(150);
+  renderMiniGraph(result.related_artifacts || []);
+
+  // History
+  const entry = {
+    text: text.substring(0, 80) + (text.length > 80 ? '...' : ''),
+    fullText: text,
+    classification: result.classification.label,
+    verdict: result.validity,
+    confidence: result.confidence,
+    time: new Date().toLocaleTimeString(),
+    result: result  // Store full result for replay
+  };
+  history.unshift(entry);
+  if (history.length > 20) history.pop();
+  renderHistory();
+}
+
+// ============================================================
+// RENDER VERDICT — from server JSON
+// ============================================================
+function renderVerdict(result) {
+  const vp = document.getElementById('verdict-panel');
+  const cls = result.classification;
+  const es = result.epistemic_status;
+  const confidence = result.confidence;
+  const validity = result.validity;
+  const related = result.related_artifacts || [];
+  const recommendation = result.recommendation || '';
+  const missing = result.missing_infrastructure || [];
+
+  const confColor  = confidence > 0.7 ? 'var(--green)' : confidence > 0.5 ? 'var(--amber)' : 'var(--red)';
+  const validColor = validity==='valid' ? 'var(--green)' : validity==='plausible' ? 'var(--amber)' : validity==='contradicted' ? 'var(--red)' : 'var(--dim)';
+  const oriBadge   = es.verdict==='a_priori' ? 'badge-apriori' : es.verdict==='a_posteriori' ? 'badge-aposteriori' : 'badge-mixed';
+
+  let relatedHtml = '';
+  if (related.length > 0) {
+    relatedHtml = related.slice(0, 6).map(m => {
+      const ag = AGENTS[m.agent] || { color:'#666' };
+      return '<div class="related-item">' +
+        '<div class="related-dot" style="background:' + ag.color + '"></div>' +
+        '<div class="related-id">' + escHtml(m.id) + '</div>' +
+        '<div class="related-title">' + escHtml(m.title) + '</div>' +
+        '<div class="related-score">' + (m.score || 0).toFixed(1) + '</div>' +
+        '</div>';
+    }).join('');
+  } else {
+    relatedHtml = '<div style="color:var(--dim);font-size:11px">No related artifacts \u2014 this is novel territory</div>';
+  }
+
+  let missingHtml = '';
+  if (missing.length > 0) {
+    missingHtml = '<div class="verdict-section"><h3>Missing Infrastructure</h3>' +
+      missing.map(m => '<div style="font-size:11px;color:var(--amber);padding:3px 0">\u26a0 ' + escHtml(m) + '</div>').join('') +
+      '</div>';
+  }
+
+  vp.innerHTML = '\
+    <div class="verdict-card animate-in">\
+      <div class="verdict-section" style="background:linear-gradient(135deg, rgba(247,127,0,0.08), rgba(252,78,42,0.04))">\
+        <h3>Classification</h3>\
+        <div class="verdict-classification" style="color:var(--fire3)">' + escHtml(cls.label) + '</div>\
+        <div class="verdict-subtitle">' + escHtml(cls.desc) + '</div>\
+      </div>\
+      <div class="verdict-section">\
+        <h3>Epistemic Status</h3>\
+        <span class="verdict-badge ' + oriBadge + '">' + escHtml(es.verdict.replace('_', ' ')) + '</span>\
+        <span style="margin-left:8px;font-size:11px;color:var(--dim)">\u2192 Route to ' + escHtml(es.route) + '</span>\
+      </div>\
+      <div class="verdict-section">\
+        <h3>Confidence</h3>\
+        <div style="display:flex;align-items:center;gap:12px">\
+          <div style="flex:1;height:10px;background:var(--surface3);border-radius:5px;overflow:hidden">\
+            <div style="width:' + (confidence * 100) + '%;height:100%;background:' + confColor + ';border-radius:5px;transition:width 1s"></div>\
+          </div>\
+          <div style="font-size:20px;font-weight:800;color:' + confColor + '">' + (confidence * 100).toFixed(0) + '%</div>\
+        </div>\
+      </div>\
+      <div class="verdict-section">\
+        <h3>Validity</h3>\
+        <span class="verdict-badge" style="background:' + validColor + '22;color:' + validColor + '">' + validity.toUpperCase() + '</span>\
+      </div>\
+      <div class="verdict-section">\
+        <h3>Related Artifacts (' + related.length + ')</h3>\
+        ' + relatedHtml + '\
+      </div>\
+      <div class="verdict-section">\
+        <h3>Recommendation</h3>\
+        <div class="recommendation-box">' + recommendation + '</div>\
+      </div>\
+      ' + missingHtml + '\
+    </div>';
+}
+
+// ============================================================
+// MINI DEPENDENCY GRAPH
+// ============================================================
+function renderMiniGraph(relatedArtifacts) {
+  const container = document.getElementById('mini-graph');
+  const canvas    = document.getElementById('mini-canvas');
+  if (!canvas) return;
+
+  container.style.display = 'block';
+
+  const W = container.clientWidth - 40;
+  const H = 140;
+  canvas.width  = W * 2;
+  canvas.height = H * 2;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  ctx.clearRect(0, 0, W, H);
+
+  const agentCols = { logos:0, axiom:1, propo:2, ori:3, tribunal:4, hypothex:5, theorica:6, synthesis:7 };
+  const colW = W / 8;
+  const midY = H / 2;
+
+  const youX = W * 0.78;
+  const youY = midY;
+
+  const top6 = (relatedArtifacts || []).slice(0, 6);
+  const maxScore = top6.length > 0 ? (top6[0].score || 1) : 1;
+
+  // Draw edges
+  top6.forEach((m, i) => {
+    const ag   = m.agent;
+    const col  = agentCols[ag] !== undefined ? agentCols[ag] : 3;
+    const nx   = colW * col + colW / 2;
+    const spread = (i - (top6.length - 1) / 2) * 14;
+    const ny   = midY + spread;
+    const opacity = Math.max(0.15, (m.score || 0) / (maxScore * 1.5));
+
+    ctx.beginPath();
+    ctx.moveTo(youX, youY);
+    ctx.lineTo(nx, ny);
+    ctx.strokeStyle = 'rgba(255,190,11,' + opacity + ')';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Draw nodes
+  top6.forEach((m, i) => {
+    const ag    = m.agent;
+    const col   = agentCols[ag] !== undefined ? agentCols[ag] : 3;
+    const nx    = colW * col + colW / 2;
+    const spread = (i - (top6.length - 1) / 2) * 14;
+    const ny    = midY + spread;
+    const color = AGENTS[ag] ? AGENTS[ag].color : '#666';
+    const r     = 7;
+
+    ctx.beginPath();
+    ctx.arc(nx, ny, r, 0, Math.PI * 2);
+    ctx.fillStyle   = color + '33';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.font      = 'bold 6px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m.id.split('-')[0].substring(0,3), nx, ny);
+
+    ctx.fillStyle    = 'rgba(255,255,255,0.35)';
+    ctx.font         = '5.5px monospace';
+    ctx.textBaseline = 'top';
+    ctx.fillText((m.title || '').substring(0, 12), nx, ny + r + 2);
+  });
+
+  // "YOU" node
+  ctx.shadowColor = 'rgba(255,190,11,0.6)';
+  ctx.shadowBlur  = 12;
+  ctx.beginPath();
+  ctx.arc(youX, youY, 10, 0, Math.PI * 2);
+  ctx.fillStyle   = 'rgba(255,190,11,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#ffbe0b';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+  ctx.shadowBlur  = 0;
+
+  ctx.fillStyle    = '#ffbe0b';
+  ctx.font         = 'bold 7px monospace';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('YOU', youX, youY);
+
+  // Agent column labels
+  Object.entries(agentCols).forEach(([ag, col]) => {
+    const x = colW * col + colW / 2;
+    ctx.fillStyle    = (AGENTS[ag] ? AGENTS[ag].color : '#666') + '55';
+    ctx.font         = '5px monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(ag.toUpperCase().substring(0,3), x, 4);
+    ctx.beginPath();
+    ctx.moveTo(x, 12);
+    ctx.lineTo(x, H - 4);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([2, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Empty state
+  if (top6.length === 0) {
+    ctx.fillStyle    = 'rgba(255,255,255,0.2)';
+    ctx.font         = '11px monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('No related artifacts \u2014 this is novel territory', W / 2, midY);
+  }
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+function renderHistory() {
+  const section = document.getElementById('history-section');
+  const list    = document.getElementById('history-list');
+  const count   = document.getElementById('history-count');
+
+  section.style.display = 'block';
+  count.textContent = '(' + history.length + ')';
+
+  const verdictColor = v =>
+    v==='valid' ? 'var(--green)' : v==='plausible' ? 'var(--amber)' : v==='contradicted' ? 'var(--red)' : 'var(--dim)';
+
+  const classColor = cls => {
+    if (cls.includes('POSTULATE')) return 'rgba(108,92,231,0.3)';
+    if (cls.includes('DEFINITION')) return 'rgba(0,184,148,0.3)';
+    if (cls.includes('THEOREM')) return 'rgba(9,132,227,0.3)';
+    if (cls.includes('HYPOTHESIS')) return 'rgba(214,48,49,0.3)';
+    return 'rgba(247,127,0,0.2)';
+  };
+
+  list.innerHTML = history.map((h, i) => '\
+    <div class="history-item" onclick="replayHistory(' + i + ')">\
+      <div class="history-num">' + (i + 1) + '</div>\
+      <div class="history-badge" style="background:' + classColor(h.classification) + ';color:var(--text)">\
+        ' + h.classification.substring(0, 12) + '\
+      </div>\
+      <div class="history-input">' + escHtml(h.text) + '</div>\
+      <div class="history-verdict" style="color:' + verdictColor(h.verdict) + '">' + h.verdict.toUpperCase() + '</div>\
+      <div style="font-size:9px;color:var(--dim);flex-shrink:0">' + h.time + '</div>\
+    </div>').join('');
+}
+
+function replayHistory(idx) {
+  const entry = history[idx];
+  if (!entry) return;
+  document.getElementById('input-text').value = entry.fullText;
+  runEvaluation();
+}
+
+// ============================================================
+// KEYBOARD SHORTCUT
+// ============================================================
+document.getElementById('input-text').addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') runEvaluation();
+});
+
+// ============================================================
+// BOOT
+// ============================================================
+window.addEventListener('load', () => {
+  initialLoad();
+});
+</script>
+</body>
+</html>

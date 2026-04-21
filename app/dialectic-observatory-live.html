@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialectic Agents — Live Observatory</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text-dim: #8888a0;
+    --accent: #6c5ce7;
+    --accent-glow: rgba(108, 92, 231, 0.3);
+    --logos: #00b894;
+    --axiom: #6c5ce7;
+    --propo: #fdcb6e;
+    --ori: #e17055;
+    --tribunal: #0984e3;
+    --hypothex: #d63031;
+    --theorica: #e84393;
+    --synthesis: #00cec9;
+    --watcher: #636e72;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    gap: 16px;
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #6c5ce7, #00cec9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .epoch-badge {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+    white-space: nowrap;
+  }
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #636e72;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .live-dot.fetching { background: #fdcb6e; animation: pulse 0.8s infinite; }
+  .live-dot.live     { background: #00b894; }
+  .live-dot.error    { background: #d63031; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid #00b894;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 12px;
+    color: #00b894;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-card {
+    flex: 1;
+    background: var(--surface);
+    padding: 14px 20px;
+    text-align: center;
+  }
+  .stat-card .number {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    transition: color 0.5s;
+  }
+  .stat-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* Main layout */
+  .main {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    min-height: calc(100vh - 130px);
+  }
+
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+  }
+  .sidebar h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    padding: 16px 16px 8px;
+  }
+  .agent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .agent-item:hover, .agent-item.active { background: var(--surface2); }
+  .agent-item.active { border-left-color: var(--accent); }
+  .agent-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .agent-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .agent-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+    transition: color 0.4s;
+  }
+  .agent-layer { font-size: 9px; color: var(--text-dim); }
+
+  .center { overflow-y: auto; display: flex; flex-direction: column; }
+
+  .graph-container {
+    position: relative;
+    height: 420px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #graph-canvas { width: 100%; height: 100%; }
+  .graph-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+  }
+  .graph-controls button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .graph-controls button:hover { background: var(--border); }
+  .graph-label {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .graph-settled {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .artifact-list { flex: 1; overflow-y: auto; padding: 0; }
+  .artifact-list-header {
+    padding: 12px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .artifact-row {
+    display: grid;
+    grid-template-columns: 10px 120px 1fr 80px 60px 50px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 12px;
+  }
+  .artifact-row:hover { background: var(--surface2); }
+  .artifact-row.selected { background: rgba(108,92,231,0.1); border-left: 2px solid var(--accent); }
+  .artifact-id { font-weight: 600; font-size: 11px; }
+  .artifact-title { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .artifact-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .status-accepted  { background: rgba(0,184,148,0.15);   color: #00b894; }
+  .status-draft     { background: rgba(253,203,110,0.15);  color: #fdcb6e; }
+  .status-challenged{ background: rgba(214,48,49,0.15);    color: #d63031; }
+  .confidence-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .confidence-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+
+  .detail-panel {
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 0;
+  }
+  .detail-header { padding: 16px; border-bottom: 1px solid var(--border); }
+  .detail-header .detail-id { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); }
+  .detail-header .detail-title { font-size: 16px; font-weight: 700; margin-top: 4px; }
+  .detail-section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .detail-section h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin-bottom: 8px; }
+  .detail-section p, .detail-section .content { font-size: 12px; line-height: 1.6; color: var(--text); }
+  .dep-tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dep-tag:hover { border-color: var(--accent); background: var(--accent-glow); }
+  .confidence-meter { display: flex; align-items: center; gap: 10px; }
+  .confidence-meter .bar { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .confidence-meter .fill { height: 100%; border-radius: 4px; }
+  .confidence-meter .value { font-size: 14px; font-weight: 700; min-width: 40px; text-align: right; }
+
+  .pipeline-section { padding: 12px 16px; }
+  .pipeline-track { display: flex; align-items: center; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .pipeline-node {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 700; color: var(--bg);
+    cursor: pointer;
+  }
+  .pipeline-node.has-artifacts { opacity: 1; }
+  .pipeline-node.empty { opacity: 0.25; }
+  .pipeline-arrow { color: var(--text-dim); font-size: 10px; }
+
+  .filter-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .filter-bar input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: inherit;
+    border-radius: 4px;
+    outline: none;
+  }
+  .filter-bar input:focus { border-color: var(--accent); }
+  .filter-bar select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 8px;
+    font-size: 11px;
+    font-family: inherit;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,15,0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+    font-size: 13px;
+    color: var(--text-dim);
+    transition: opacity 0.5s;
+  }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loading-title { font-size: 16px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+  .loading-bar { width: 300px; height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+  .loading-fill { height: 100%; background: linear-gradient(90deg, #6c5ce7, #00cec9); border-radius: 1px; transition: width 0.3s; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: var(--text-dim); font-size: 12px; gap: 8px; }
+  .empty-state .icon { font-size: 32px; opacity: 0.3; }
+
+  @media (max-width: 1024px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar, .detail-panel { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-title">⬡ Dialectic Observatory</div>
+  <div id="loading-msg">Connecting to GitHub...</div>
+  <div class="loading-bar"><div class="loading-fill" id="loading-fill" style="width:5%"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <h1>⬡ Dialectic Agents — Live Observatory</h1>
+  <div class="header-right">
+    <div class="live-indicator">
+      <div class="live-dot" id="live-dot"></div>
+      <span id="live-status">Initializing...</span>
+    </div>
+    <div class="epoch-badge" id="epoch-badge">LOADING...</div>
+  </div>
+</div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<div class="main">
+  <div class="sidebar">
+    <h2>Agents</h2>
+    <div id="agent-list"></div>
+
+    <h2 style="margin-top:20px">Pipeline</h2>
+    <div class="pipeline-section">
+      <div class="pipeline-track" id="pipeline-track"></div>
+    </div>
+
+    <h2 style="margin-top:20px">Confidence Distribution</h2>
+    <div style="padding:8px 16px">
+      <canvas id="confidence-chart" width="248" height="100"></canvas>
+    </div>
+
+    <h2 style="margin-top:20px">Layer Heatmap</h2>
+    <div style="padding:8px 16px" id="layer-heatmap"></div>
+  </div>
+
+  <div class="center">
+    <div class="graph-container">
+      <canvas id="graph-canvas"></canvas>
+      <div class="graph-controls">
+        <button onclick="resetGraph()">Reset</button>
+        <button onclick="toggleLabels()">Labels</button>
+        <button onclick="wakePhysics()">Shake</button>
+      </div>
+      <div class="graph-label">Dependency Graph · Click nodes to inspect · Drag to move</div>
+      <div class="graph-settled" id="graph-settled"></div>
+    </div>
+    <div class="filter-bar">
+      <input type="text" id="search-input" placeholder="Search artifacts..." oninput="filterArtifacts()">
+      <select id="filter-agent" onchange="filterArtifacts()">
+        <option value="all">All Agents</option>
+      </select>
+      <select id="filter-status" onchange="filterArtifacts()">
+        <option value="all">All Status</option>
+        <option value="accepted">Accepted</option>
+        <option value="draft">Draft</option>
+        <option value="challenged">Challenged</option>
+      </select>
+    </div>
+    <div class="artifact-list-header">
+      <span>Artifacts</span>
+      <span id="artifact-count"></span>
+    </div>
+    <div class="artifact-list" id="artifact-list"></div>
+  </div>
+
+  <div class="detail-panel" id="detail-panel">
+    <div class="empty-state">
+      <div class="icon">⬡</div>
+      <div>Select an artifact to inspect</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const REPO   = 'ramazanpolat/dialectic-agents';
+const BRANCH = 'main';
+const POLL_MS = 60_000;
+
+const AGENTS = {
+  logos:     { name: 'Logos',     color: '#00b894', layers: '0-1',   role: 'Definitions & Primitives' },
+  axiom:     { name: 'Axiom',     color: '#6c5ce7', layers: '2',     role: 'Axioms & Postulates' },
+  propo:     { name: 'Propo',     color: '#fdcb6e', layers: '3-4',   role: 'Propositions & Premises' },
+  ori:       { name: 'Ori',       color: '#e17055', layers: '—',     role: 'A Priori / A Posteriori Classifier' },
+  tribunal:  { name: 'Tribunal',  color: '#0984e3', layers: '5-8',   role: 'Inference & Theorems' },
+  hypothex:  { name: 'Hypothex',  color: '#d63031', layers: '9',     role: 'Hypotheses' },
+  theorica:  { name: 'Theorica',  color: '#e84393', layers: '10-11', role: 'Theories & Models' },
+  synthesis: { name: 'Synthesis', color: '#00cec9', layers: '—',     role: 'Dialectical Integration' },
+  watcher:   { name: 'Watcher',   color: '#636e72', layers: '—',     role: 'Observer & Orchestrator' },
+};
+const AGENT_ORDER = Object.keys(AGENTS);
+
+// ============================================================
+// STATE
+// ============================================================
+let ARTIFACTS = [];
+let artifactMap = {};
+let dependedBy = {};
+let selectedArtifact = null;
+let selectedAgent = 'all';
+let showLabels = true;
+let treeEtag = null;
+let blobShas = {};  // path → sha for change detection
+
+// ============================================================
+// MARKDOWN / FRONTMATTER PARSER  (no dependencies)
+// ============================================================
+
+function parseFrontmatter(text) {
+  const m = text.match(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n/);
+  if (!m) return [null, text];
+
+  const fm = {};
+  for (const line of m[1].split('\n')) {
+    const colon = line.indexOf(':');
+    if (colon < 0) continue;
+    const key = line.slice(0, colon).trim();
+    let val   = line.slice(colon + 1).trim();
+    if (!key || key.startsWith('#')) continue;
+
+    if ((val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    } else if (val.startsWith('[') && val.endsWith(']')) {
+      const inner = val.slice(1, -1).trim();
+      val = inner ? inner.split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean) : [];
+    } else if (/^-?\d+(\.\d+)?$/.test(val)) {
+      val = Number(val);
+    }
+    fm[key] = val;
+  }
+  return [fm, text.slice(m[0].length)];
+}
+
+const TITLE_STRIP = /^(?:Definition|Primitive|Axiom|Postulate|Proposition|Theorem|Lemma|Corollary|Hypothesis|Theory|Model|Synthesis|Classification of [A-Z]+-\d+|Classification):\s+/i;
+
+function extractTitle(body) {
+  const m = body.match(/^#[ \t]+(.+)$/m);
+  if (!m) return '';
+  return m[1].trim()
+    .replace(TITLE_STRIP, '')
+    .replace(/^The\s+/, '')
+    .replace(/ -- /g, ' — ')
+    .slice(0, 80).trim();
+}
+
+// Heading patterns to search for description text, in priority order
+const DESC_HEADINGS = [
+  /##[ \t]+Statement[ \t]*\r?\n([\s\S]*?)(?=\n##[ \t]|$)/,
+  /##[ \t]+Executive Summary[ \t]*\r?\n([\s\S]*?)(?=\n##[ \t]|$)/,
+  /##[ \t]+Dialectical Synthesis[ \t]*\r?\n([\s\S]*?)(?=\n##[ \t]|$)/,
+  /##[ \t]+Hypothesis Structure[ \t]*\r?\n([\s\S]*?)(?=\n##[ \t]|$)/,
+  /##[ \t]+Theory Structure[ \t]*\r?\n([\s\S]*?)(?=\n##[ \t]|$)/,
+  /##[ \t]+Summary[ \t]*\r?\n([\s\S]*?)(?=\n##[ \t]|$)/,
+];
+
+function extractDesc(body) {
+  let section = '';
+  for (const pat of DESC_HEADINGS) {
+    const m = body.match(pat);
+    if (m && m[1].trim()) { section = m[1]; break; }
+  }
+  if (!section) {
+    const m = body.match(/^#[ \t]+.+$\n([\s\S]*?)(?=\n#+|$)/m);
+    section = m ? m[1] : '';
+  }
+
+  let text = '', listFb = '';
+  for (const p of section.split(/\n\n+/)) {
+    const pt = p.trim();
+    if (!pt || pt.startsWith('#') || pt.startsWith('|')) continue;
+    if (/^[-*] /.test(pt)) {
+      if (!listFb) listFb = pt.split('\n')[0].replace(/^[-*]\s+/, '');
+    } else { text = pt; break; }
+  }
+  if (!text) text = listFb;
+
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
+    .replace(/`(.+?)`/g, '$1').replace(/\[(.+?)\]\(.+?\)/g, '$1')
+    .replace(/\s+/g, ' ').trim().slice(0, 400);
+}
+
+function parseArtifact(text, path) {
+  const [fm, body] = parseFrontmatter(text);
+  if (!fm) return null;
+
+  const id = (String(fm.id || '')).trim();
+  if (!id) return null;
+
+  const agentFromPath = path.split('/')[0].toLowerCase();
+  const agent = String(fm.agent || agentFromPath).toLowerCase();
+
+  let depends = fm.depends_on || [];
+  if (!Array.isArray(depends)) depends = [];
+
+  const rawDate = String(fm.created || '2026-02-22');
+  const created = rawDate.includes('T') ? rawDate : rawDate + 'T00:00:00Z';
+
+  return {
+    id,
+    agent,
+    type:       String(fm.type   || 'unknown'),
+    status:     String(fm.status || 'draft'),
+    title:      extractTitle(body),
+    domain:     String(fm.domain || 'unknown'),
+    depends,
+    confidence: isNaN(+fm.confidence) ? 0.8 : +fm.confidence,
+    layer:      isNaN(+fm.layer)      ? 0   : Math.round(+fm.layer),
+    created,
+    desc:       extractDesc(body),
+  };
+}
+
+// ============================================================
+// GITHUB FETCHING
+// ============================================================
+
+function isArtifactPath(path) {
+  return /^[^/]+\/artifacts\/[^/]+\.md$/.test(path);
+}
+
+async function fetchTree() {
+  const headers = { 'Accept': 'application/vnd.github.v3+json' };
+  if (treeEtag) headers['If-None-Match'] = treeEtag;
+
+  const resp = await fetch(
+    `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`,
+    { headers }
+  );
+
+  if (resp.status === 304) return null;  // not modified — no rate-limit charge
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(body.message || `GitHub API ${resp.status}`);
+  }
+
+  treeEtag = resp.headers.get('ETag');
+  return resp.json();
+}
+
+async function fetchRaw(path) {
+  // raw.githubusercontent.com is not subject to the 60 req/hr API rate limit
+  const url = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${path}`;
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(`Raw ${r.status}: ${path}`);
+  return r.text();
+}
+
+function setLoadingProgress(pct, msg) {
+  document.getElementById('loading-fill').style.width = pct + '%';
+  document.getElementById('loading-msg').textContent = msg;
+}
+
+function setStatus(msg, type = 'info') {
+  const dot = document.getElementById('live-dot');
+  const el  = document.getElementById('live-status');
+  dot.className = 'live-dot ' + (type === 'fetching' ? 'fetching' : type === 'error' ? 'error' : 'live');
+  el.textContent = msg;
+}
+
+function showToast(msg, duration = 3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+async function initialLoad() {
+  setStatus('Fetching repo tree...', 'fetching');
+  setLoadingProgress(10, 'Fetching repo tree from GitHub...');
+
+  let tree;
+  try {
+    tree = await fetchTree();
+  } catch (e) {
+    setStatus('GitHub error: ' + e.message, 'error');
+    setLoadingProgress(100, 'Error: ' + e.message);
+    document.getElementById('loading-overlay').style.background = 'rgba(10,10,15,0.97)';
+    return;
+  }
+
+  const artifactItems = (tree?.tree || []).filter(i => i.type === 'blob' && isArtifactPath(i.path));
+  blobShas = {};
+  artifactItems.forEach(i => blobShas[i.path] = i.sha);
+
+  setLoadingProgress(30, `Fetching ${artifactItems.length} artifacts from GitHub...`);
+  setStatus(`Fetching ${artifactItems.length} artifacts...`, 'fetching');
+
+  let done = 0;
+  const results = await Promise.allSettled(
+    artifactItems.map(item =>
+      fetchRaw(item.path)
+        .then(text => parseArtifact(text, item.path))
+        .finally(() => {
+          done++;
+          setLoadingProgress(30 + (done / artifactItems.length) * 65,
+            `Loaded ${done} / ${artifactItems.length}`);
+        })
+    )
+  );
+
+  ARTIFACTS = results
+    .filter(r => r.status === 'fulfilled' && r.value)
+    .map(r => r.value);
+
+  sortArtifacts();
+  rebuildMaps();
+
+  setLoadingProgress(100, 'Done!');
+  setTimeout(() => document.getElementById('loading-overlay').classList.add('hidden'), 400);
+
+  renderAll(true);
+  setStatus(`Loaded ${ARTIFACTS.length} artifacts · ${timeStr()}`, 'live');
+
+  // Start polling
+  setInterval(poll, POLL_MS);
+}
+
+async function poll() {
+  setStatus('Checking for updates...', 'fetching');
+  try {
+    const tree = await fetchTree();
+    if (!tree) {
+      setStatus(`No changes · Checked ${timeStr()}`);
+      return;
+    }
+
+    const artifactItems = tree.tree.filter(i => i.type === 'blob' && isArtifactPath(i.path));
+    const changed = artifactItems.filter(i => blobShas[i.path] !== i.sha);
+
+    blobShas = {};
+    artifactItems.forEach(i => blobShas[i.path] = i.sha);
+
+    if (!changed.length) {
+      setStatus(`No changes · Checked ${timeStr()}`);
+      return;
+    }
+
+    setStatus(`Fetching ${changed.length} updated file(s)...`, 'fetching');
+    const results = await Promise.allSettled(
+      changed.map(i => fetchRaw(i.path).then(text => parseArtifact(text, i.path)))
+    );
+
+    const updated = results.filter(r => r.status === 'fulfilled' && r.value).map(r => r.value);
+    let newCount = 0;
+
+    updated.forEach(a => {
+      const idx = ARTIFACTS.findIndex(x => x.id === a.id);
+      if (idx >= 0) { ARTIFACTS[idx] = a; }
+      else          { ARTIFACTS.push(a); newCount++; }
+    });
+
+    sortArtifacts();
+    rebuildMaps();
+    renderAll(false);
+    addNewNodesToGraph(updated.filter(a => ARTIFACTS.findIndex(x => x.id === a.id) >= 0));
+
+    const msg = newCount > 0
+      ? `${newCount} new artifact(s) · ${updated.length - newCount} updated`
+      : `${updated.length} artifact(s) updated`;
+    showToast('↑ ' + msg);
+    setStatus(`${msg} · ${timeStr()}`, 'live');
+
+  } catch (e) {
+    setStatus('Poll error: ' + e.message, 'error');
+  }
+}
+
+function timeStr() { return new Date().toLocaleTimeString(); }
+
+function sortArtifacts() {
+  ARTIFACTS.sort((a, b) => {
+    const oa = AGENT_ORDER.indexOf(a.agent), ob = AGENT_ORDER.indexOf(b.agent);
+    return (oa < 0 ? 99 : oa) - (ob < 0 ? 99 : ob) || a.id.localeCompare(b.id);
+  });
+}
+
+function rebuildMaps() {
+  artifactMap = {};
+  dependedBy  = {};
+  ARTIFACTS.forEach(a => { artifactMap[a.id] = a; });
+  ARTIFACTS.forEach(a => {
+    a.depends.forEach(dep => {
+      if (!dependedBy[dep]) dependedBy[dep] = [];
+      dependedBy[dep].push(a.id);
+    });
+  });
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function getAgentColor(agent) { return AGENTS[agent]?.color || '#666'; }
+
+function timeAgo(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const h = Math.floor((now - d) / 3600000);
+  if (h < 1) return 'just now';
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+function renderAll(initGraph_) {
+  renderStats();
+  renderAgentList();
+  renderPipeline();
+  renderConfidenceChart();
+  renderLayerHeatmap();
+  filterArtifacts();
+  if (initGraph_) initGraph();
+}
+
+function renderStats() {
+  const bar = document.getElementById('stats-bar');
+  const accepted = ARTIFACTS.filter(a => a.status === 'accepted').length;
+  const avgConf  = ARTIFACTS.length ? (ARTIFACTS.reduce((s, a) => s + a.confidence, 0) / ARTIFACTS.length).toFixed(2) : '—';
+  const deps     = ARTIFACTS.reduce((s, a) => s + a.depends.length, 0);
+  const layers   = new Set(ARTIFACTS.map(a => a.layer)).size;
+
+  bar.innerHTML = `
+    <div class="stat-card"><div class="number" style="color:#00cec9">${ARTIFACTS.length}</div><div class="label">Total Artifacts</div></div>
+    <div class="stat-card"><div class="number" style="color:#00b894">${accepted}</div><div class="label">Accepted</div></div>
+    <div class="stat-card"><div class="number" style="color:#fdcb6e">${ARTIFACTS.length - accepted}</div><div class="label">Draft</div></div>
+    <div class="stat-card"><div class="number" style="color:#6c5ce7">${deps}</div><div class="label">Dependencies</div></div>
+    <div class="stat-card"><div class="number" style="color:#e17055">${avgConf}</div><div class="label">Avg Confidence</div></div>
+    <div class="stat-card"><div class="number" style="color:#0984e3">${layers}</div><div class="label">Layers Active</div></div>
+  `;
+
+  document.getElementById('epoch-badge').textContent =
+    `EPOCH 1 · ${ARTIFACTS.length} ARTIFACTS · ${Object.keys(AGENTS).length} AGENTS`;
+}
+
+function renderAgentList() {
+  const list   = document.getElementById('agent-list');
+  const select = document.getElementById('filter-agent');
+  list.innerHTML = '';
+
+  Object.entries(AGENTS).forEach(([key, ag]) => {
+    const count = ARTIFACTS.filter(a => a.agent === key).length;
+    const item  = document.createElement('div');
+    item.className = 'agent-item' + (selectedAgent === key ? ' active' : '');
+    item.innerHTML = `
+      <div class="agent-dot" style="background:${ag.color}"></div>
+      <div>
+        <div class="agent-name">${ag.name}</div>
+        <div class="agent-layer">Layer ${ag.layers} · ${ag.role}</div>
+      </div>
+      <div class="agent-count">${count}</div>
+    `;
+    item.onclick = () => {
+      selectedAgent = selectedAgent === key ? 'all' : key;
+      document.getElementById('filter-agent').value = selectedAgent;
+      renderAgentList();
+      filterArtifacts();
+    };
+    list.appendChild(item);
+  });
+
+  select.innerHTML = '<option value="all">All Agents</option>';
+  Object.entries(AGENTS).forEach(([k, a]) => {
+    select.innerHTML += `<option value="${k}">${a.name}</option>`;
+  });
+  select.value = selectedAgent;
+}
+
+function renderPipeline() {
+  const track = document.getElementById('pipeline-track');
+  track.innerHTML = '';
+  AGENT_ORDER.forEach((key, i) => {
+    const ag    = AGENTS[key];
+    const count = ARTIFACTS.filter(a => a.agent === key).length;
+    const node  = document.createElement('div');
+    node.className = 'pipeline-node ' + (count > 0 ? 'has-artifacts' : 'empty');
+    node.style.background = ag.color;
+    node.textContent = ag.name.substring(0, 2).toUpperCase();
+    node.title = `${ag.name}: ${count} artifacts`;
+    track.appendChild(node);
+    if (i < AGENT_ORDER.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.className = 'pipeline-arrow';
+      arrow.textContent = '→';
+      track.appendChild(arrow);
+    }
+  });
+}
+
+function renderArtifactList(artifacts) {
+  const list = document.getElementById('artifact-list');
+  document.getElementById('artifact-count').textContent = `${artifacts.length} items`;
+  list.innerHTML = '';
+
+  artifacts.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'artifact-row' + (selectedArtifact?.id === a.id ? ' selected' : '');
+    const cc = a.confidence > 0.9 ? '#00b894' : a.confidence > 0.8 ? '#fdcb6e' : '#e17055';
+    row.innerHTML = `
+      <div class="agent-dot" style="background:${getAgentColor(a.agent)}"></div>
+      <div class="artifact-id">${a.id}</div>
+      <div class="artifact-title">${a.title}</div>
+      <div class="artifact-status status-${a.status}">${a.status}</div>
+      <div><div class="confidence-bar"><div class="confidence-fill" style="width:${a.confidence*100}%;background:${cc}"></div></div></div>
+      <div style="color:var(--text-dim);font-size:10px">${timeAgo(a.created)}</div>
+    `;
+    row.onclick = () => selectArtifact(a);
+    list.appendChild(row);
+  });
+}
+
+function filterArtifacts() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const agent  = document.getElementById('filter-agent').value;
+  const status = document.getElementById('filter-status').value;
+
+  const filtered = ARTIFACTS.filter(a => {
+    if (agent  !== 'all' && a.agent  !== agent)  return false;
+    if (status !== 'all' && a.status !== status) return false;
+    if (search && !a.title.toLowerCase().includes(search) &&
+                  !a.id.toLowerCase().includes(search) &&
+                  !a.desc.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  renderArtifactList(filtered);
+}
+
+function selectArtifact(a) {
+  selectedArtifact = a;
+  filterArtifacts();
+  renderDetail(a);
+  highlightId = a.id;
+}
+
+function renderDetail(a) {
+  const panel   = document.getElementById('detail-panel');
+  const depTags = a.depends.map(d =>
+    `<span class="dep-tag" onclick="selectArtifact(artifactMap['${d}'])">${d}</span>`
+  ).join('');
+  const revDeps = (dependedBy[a.id] || []).map(d =>
+    `<span class="dep-tag" onclick="selectArtifact(artifactMap['${d}'])">${d}</span>`
+  ).join('');
+  const cc = a.confidence > 0.9 ? '#00b894' : a.confidence > 0.8 ? '#fdcb6e' : '#e17055';
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-id" style="color:${getAgentColor(a.agent)}">${a.agent.toUpperCase()} · ${a.type.toUpperCase()} · LAYER ${a.layer}</div>
+      <div class="detail-title">${a.title}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Statement</h3>
+      <div class="content">${a.desc || '<span style="color:var(--text-dim)">No description extracted</span>'}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Confidence</h3>
+      <div class="confidence-meter">
+        <div class="bar"><div class="fill" style="width:${a.confidence*100}%;background:${cc}"></div></div>
+        <div class="value" style="color:${cc}">${(a.confidence*100).toFixed(0)}%</div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>Status</h3>
+      <span class="artifact-status status-${a.status}">${a.status}</span>
+      <span style="margin-left:8px;font-size:11px;color:var(--text-dim)">${a.domain}</span>
+    </div>
+    <div class="detail-section">
+      <h3>Depends On (${a.depends.length})</h3>
+      <div>${depTags || '<span style="color:var(--text-dim);font-size:11px">No dependencies — foundational</span>'}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Depended On By (${(dependedBy[a.id]||[]).length})</h3>
+      <div>${revDeps || '<span style="color:var(--text-dim);font-size:11px">No dependents yet</span>'}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Metadata</h3>
+      <div style="font-size:11px;color:var(--text-dim);line-height:2">
+        ID: ${a.id}<br>
+        Created: ${a.created}<br>
+        Age: ${timeAgo(a.created)}<br>
+        Layer: ${a.layer}<br>
+        Agent: ${AGENTS[a.agent]?.name || a.agent}
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>View on GitHub</h3>
+      <a href="https://github.com/${REPO}" target="_blank"
+         style="font-size:11px;color:var(--accent);text-decoration:none">
+        github.com/${REPO} ↗
+      </a>
+    </div>
+  `;
+}
+
+// ============================================================
+// FORCE-DIRECTED GRAPH — with settling
+// ============================================================
+let nodes = [], edges = [];
+let canvas, ctx;
+let highlightId = null;
+let dragNode = null;
+let mouseX = 0, mouseY = 0;
+let physicsEnabled = true;
+let alpha = 1.0;                  // cooling factor: forces are scaled by alpha each tick
+const ALPHA_DECAY = 0.0228;       // D3 default: alpha reaches ~0.001 after 300 ticks (~5s at 60fps)
+const ALPHA_MIN   = 0.001;        // below this, simulation is frozen
+const VELOCITY_DECAY = 0.4;       // fraction of velocity removed each tick (higher = settles faster)
+
+function nodeMap_() {
+  const m = {};
+  nodes.forEach(n => m[n.id] = n);
+  return m;
+}
+
+function initGraph() {
+  canvas = document.getElementById('graph-canvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+
+  nodes = ARTIFACTS.map(a => ({
+    id:         a.id,
+    agent:      a.agent,
+    x:          w/2 + (Math.random() - 0.5) * w * 0.6,
+    y:          h/2 + (Math.random() - 0.5) * h * 0.6,
+    vx: 0, vy: 0,
+    radius:     4 + (dependedBy[a.id]?.length || 0) * 1.5,
+    color:      getAgentColor(a.agent),
+    label:      a.id,
+    title:      a.title,
+    layer:      a.layer,
+  }));
+
+  rebuildEdges();
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup',   onMouseUp);
+  canvas.addEventListener('click',     onCanvasClick);
+
+  physicsEnabled = true;
+  alpha = 1.0;
+
+  requestAnimationFrame(animate);
+}
+
+function rebuildEdges() {
+  const nm = nodeMap_();
+  edges = [];
+  ARTIFACTS.forEach(a => {
+    a.depends.forEach(dep => {
+      if (nm[dep] && nm[a.id]) edges.push({ source: nm[dep], target: nm[a.id] });
+    });
+  });
+}
+
+// Called after a poll adds new artifacts — adds nodes without resetting existing ones
+function addNewNodesToGraph(updated) {
+  const existing = nodeMap_();
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+
+  updated.forEach(a => {
+    if (!existing[a.id]) {
+      // Brand new node — place near center with a little jitter
+      nodes.push({
+        id:     a.id,
+        agent:  a.agent,
+        x:      w/2 + (Math.random() - 0.5) * 80,
+        y:      h/2 + (Math.random() - 0.5) * 80,
+        vx: 0, vy: 0,
+        radius: 4 + (dependedBy[a.id]?.length || 0) * 1.5,
+        color:  getAgentColor(a.agent),
+        label:  a.id,
+        title:  a.title,
+        layer:  a.layer,
+      });
+    }
+    // Update radius for existing nodes (their dependedBy may have grown)
+    if (existing[a.id]) {
+      existing[a.id].radius = 4 + (dependedBy[a.id]?.length || 0) * 1.5;
+    }
+  });
+
+  rebuildEdges();
+  wakePhysics();  // brief re-simulation to settle new nodes
+}
+
+function wakePhysics() {
+  physicsEnabled = true;
+  alpha = 1.0;
+  document.getElementById('graph-settled').textContent = '';
+}
+
+function resizeCanvas() {
+  canvas.width  = canvas.parentElement.clientWidth  * 2;
+  canvas.height = canvas.parentElement.clientHeight * 2;
+  canvas.style.width  = '100%';
+  canvas.style.height = '100%';
+  ctx.scale(2, 2);
+}
+
+function onMouseDown(e) {
+  const { x, y } = canvasPos(e);
+  nodes.forEach(n => { if (dist(n, x, y) < n.radius + 5) dragNode = n; });
+  if (dragNode) wakePhysics();
+}
+function onMouseMove(e) {
+  const { x, y } = canvasPos(e);
+  mouseX = x; mouseY = y;
+  if (dragNode) { dragNode.x = x; dragNode.y = y; dragNode.vx = 0; dragNode.vy = 0; }
+}
+function onMouseUp()  { dragNode = null; }
+function onCanvasClick(e) {
+  const { x, y } = canvasPos(e);
+  nodes.forEach(n => { if (dist(n, x, y) < n.radius + 5) selectArtifact(artifactMap[n.id]); });
+}
+function canvasPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function dist(n, x, y) { return Math.sqrt((n.x - x) ** 2 + (n.y - y) ** 2); }
+
+function highlightNode(id) { highlightId = id; }
+
+function animate() {
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  if (physicsEnabled && alpha > ALPHA_MIN) {
+    // All forces are scaled by alpha — as alpha decays to 0, forces vanish and nodes freeze.
+
+    // Repulsion
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[j].x - nodes[i].x;
+        const dy = nodes[j].y - nodes[i].y;
+        const d  = Math.sqrt(dx * dx + dy * dy) || 1;
+        const f  = alpha * 800 / (d * d);
+        nodes[i].vx -= (dx / d) * f;  nodes[i].vy -= (dy / d) * f;
+        nodes[j].vx += (dx / d) * f;  nodes[j].vy += (dy / d) * f;
+      }
+    }
+
+    // Edge attraction
+    edges.forEach(e => {
+      const dx = e.target.x - e.source.x;
+      const dy = e.target.y - e.source.y;
+      const d  = Math.sqrt(dx * dx + dy * dy) || 1;
+      const f  = alpha * (d - 80) * 0.01;
+      e.source.vx += (dx / d) * f;  e.source.vy += (dy / d) * f;
+      e.target.vx -= (dx / d) * f;  e.target.vy -= (dy / d) * f;
+    });
+
+    // Center gravity
+    nodes.forEach(n => {
+      n.vx += alpha * (w / 2 - n.x) * 0.001;
+      n.vy += alpha * (h / 2 - n.y) * 0.001;
+    });
+
+    // Layer-based vertical force
+    nodes.forEach(n => {
+      const ty = 40 + (n.layer / 12) * (h - 80);
+      n.vy += alpha * (ty - n.y) * 0.005;
+    });
+
+    // Integrate with strong velocity decay so nodes stop quickly once forces weaken
+    nodes.forEach(n => {
+      if (n === dragNode) return;
+      n.vx *= (1 - VELOCITY_DECAY);
+      n.vy *= (1 - VELOCITY_DECAY);
+      n.x  += n.vx;  n.y  += n.vy;
+      n.x = Math.max(20, Math.min(w - 20, n.x));
+      n.y = Math.max(20, Math.min(h - 20, n.y));
+    });
+
+    // Cool down: alpha decays each tick until it hits ALPHA_MIN, then freeze
+    alpha *= (1 - ALPHA_DECAY);
+    if (alpha <= ALPHA_MIN) {
+      physicsEnabled = false;
+      // Zero out residual velocities so nodes are perfectly still
+      nodes.forEach(n => { n.vx = 0; n.vy = 0; });
+      document.getElementById('graph-settled').textContent = 'Settled · Shake to restart';
+    }
+  }
+
+  // Draw edges
+  edges.forEach(e => {
+    const hi = highlightId && (e.source.id === highlightId || e.target.id === highlightId);
+    ctx.beginPath();
+    ctx.moveTo(e.source.x, e.source.y);
+    ctx.lineTo(e.target.x, e.target.y);
+    ctx.strokeStyle = hi ? 'rgba(108,92,231,0.6)' : 'rgba(255,255,255,0.06)';
+    ctx.lineWidth   = hi ? 1.5 : 0.5;
+    ctx.stroke();
+
+    if (hi) {
+      const angle = Math.atan2(e.target.y - e.source.y, e.target.x - e.source.x);
+      const mx = (e.source.x + e.target.x) / 2;
+      const my = (e.source.y + e.target.y) / 2;
+      ctx.beginPath();
+      ctx.moveTo(mx + 5 * Math.cos(angle - 0.5), my + 5 * Math.sin(angle - 0.5));
+      ctx.lineTo(mx + 5 * Math.cos(angle),        my + 5 * Math.sin(angle));
+      ctx.lineTo(mx + 5 * Math.cos(angle + 0.5),  my + 5 * Math.sin(angle + 0.5));
+      ctx.strokeStyle = 'rgba(108,92,231,0.8)';
+      ctx.stroke();
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const isHi  = n.id === highlightId;
+    const isConn = highlightId && (
+      artifactMap[highlightId]?.depends.includes(n.id) ||
+      artifactMap[n.id]?.depends.includes(highlightId)
+    );
+    const isHov = dist(n, mouseX, mouseY) < n.radius + 5;
+
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+
+    if (isHi) {
+      ctx.fillStyle  = n.color;
+      ctx.shadowColor = n.color;
+      ctx.shadowBlur  = 15;
+    } else if (isConn) {
+      ctx.fillStyle = n.color;
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = highlightId ? 'rgba(255,255,255,0.08)' : n.color + (isHov ? '' : '99');
+      ctx.shadowBlur = 0;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    if (showLabels && (isHi || isConn || isHov || !highlightId)) {
+      ctx.fillStyle = isHi || isHov ? '#fff' : 'rgba(255,255,255,0.4)';
+      ctx.font      = isHi || isHov ? 'bold 8px monospace' : '7px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(isHov ? n.title.slice(0, 28) : n.label, n.x, n.y - n.radius - 4);
+    }
+  });
+
+  requestAnimationFrame(animate);
+}
+
+function resetGraph() {
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+  nodes.forEach(n => {
+    n.x = w/2 + (Math.random() - 0.5) * w * 0.6;
+    n.y = h/2 + (Math.random() - 0.5) * h * 0.6;
+    n.vx = 0; n.vy = 0;
+  });
+  highlightId = null;
+  wakePhysics();
+}
+function toggleLabels() { showLabels = !showLabels; }
+
+// ============================================================
+// MINI CHARTS
+// ============================================================
+function renderConfidenceChart() {
+  const c  = document.getElementById('confidence-chart');
+  const cx = c.getContext('2d');
+  const buckets = [0, 0, 0, 0, 0];
+  ARTIFACTS.forEach(a => {
+    if      (a.confidence >= 0.90) buckets[4]++;
+    else if (a.confidence >= 0.85) buckets[3]++;
+    else if (a.confidence >= 0.80) buckets[2]++;
+    else if (a.confidence >= 0.75) buckets[1]++;
+    else                           buckets[0]++;
+  });
+  const max    = Math.max(...buckets) || 1;
+  const colors = ['#d63031','#e17055','#fdcb6e','#00b894','#0984e3'];
+  const labels = ['<75','75','80','85','90+'];
+  const bw = 40, gap = 8;
+  cx.clearRect(0, 0, 248, 100);
+  buckets.forEach((v, i) => {
+    const bh = (v / max) * 70;
+    cx.fillStyle = colors[i];
+    cx.fillRect(i * (bw + gap) + 4, 80 - bh, bw, bh);
+    cx.fillStyle = '#8888a0';
+    cx.font = '8px monospace';
+    cx.textAlign = 'center';
+    cx.fillText(labels[i], i * (bw + gap) + 4 + bw / 2, 94);
+    if (v > 0) {
+      cx.fillStyle = '#e0e0e8';
+      cx.fillText(v, i * (bw + gap) + 4 + bw / 2, 78 - bh);
+    }
+  });
+}
+
+function renderLayerHeatmap() {
+  const el = document.getElementById('layer-heatmap');
+  const names = ['Primitives','Definitions','Axioms','Propositions','Premises',
+                  'Inference','Lemmas','Theorems','Corollaries','Hypotheses','Theories','Models'];
+  const lc = {};
+  ARTIFACTS.forEach(a => { lc[a.layer] = (lc[a.layer] || 0) + 1; });
+  const max = Math.max(...Object.values(lc)) || 1;
+  let html = '';
+  for (let i = 0; i <= 12; i++) {
+    const cnt = lc[i] || 0;
+    const bg  = cnt ? `rgba(108,92,231,${(cnt/max)*0.8})` : 'var(--border)';
+    html += `<div style="display:flex;align-items:center;gap:8px;margin:2px 0">
+      <div style="width:16px;font-size:9px;color:var(--text-dim);text-align:right">${i}</div>
+      <div style="flex:1;height:14px;background:${bg};border-radius:2px;display:flex;align-items:center;padding:0 6px">
+        <span style="font-size:8px;color:${cnt/max>0.5?'#fff':'var(--text-dim)'}">${names[i]||'—'}${cnt?' ('+cnt+')':''}</span>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+window.addEventListener('load', () => {
+  initialLoad();
+});
+
+window.addEventListener('resize', () => {
+  if (canvas) { resizeCanvas(); }
+});
+</script>
+</body>
+</html>

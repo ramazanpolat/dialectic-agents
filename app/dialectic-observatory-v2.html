@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialectic Agents — Knowledge Observatory</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text-dim: #8888a0;
+    --accent: #6c5ce7;
+    --accent-glow: rgba(108, 92, 231, 0.3);
+    --logos: #00b894;
+    --axiom: #6c5ce7;
+    --propo: #fdcb6e;
+    --ori: #e17055;
+    --tribunal: #0984e3;
+    --hypothex: #d63031;
+    --theorica: #e84393;
+    --synthesis: #00cec9;
+    --watcher: #636e72;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #6c5ce7, #00cec9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .epoch-badge {
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-card {
+    flex: 1;
+    background: var(--surface);
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .stat-card .number {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .stat-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* Main layout */
+  .main {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    min-height: calc(100vh - 140px);
+  }
+
+  /* Left sidebar — Agent list */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+  }
+  .sidebar h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    padding: 16px 16px 8px;
+  }
+  .agent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .agent-item:hover, .agent-item.active {
+    background: var(--surface2);
+  }
+  .agent-item.active {
+    border-left-color: var(--accent);
+  }
+  .agent-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .agent-name {
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+  }
+  .agent-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .agent-layer {
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  /* Center — Graph + Artifact list */
+  .center {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Dependency graph (Canvas) */
+  .graph-container {
+    position: relative;
+    height: 420px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #graph-canvas {
+    width: 100%;
+    height: 100%;
+  }
+  .graph-controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+  }
+  .graph-controls button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .graph-controls button:hover { background: var(--border); }
+  .graph-label {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Artifact list */
+  .artifact-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+  .artifact-list-header {
+    padding: 12px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .artifact-row {
+    display: grid;
+    grid-template-columns: 10px 120px 1fr 80px 60px 50px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 12px;
+  }
+  .artifact-row:hover {
+    background: var(--surface2);
+  }
+  .artifact-row.selected {
+    background: rgba(108, 92, 231, 0.1);
+    border-left: 2px solid var(--accent);
+  }
+  .artifact-id {
+    font-weight: 600;
+    font-size: 11px;
+  }
+  .artifact-title {
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .artifact-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .status-accepted { background: rgba(0,184,148,0.15); color: #00b894; }
+  .status-draft { background: rgba(253,203,110,0.15); color: #fdcb6e; }
+  .status-challenged { background: rgba(214,48,49,0.15); color: #d63031; }
+  .confidence-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .confidence-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  /* Right sidebar — Detail panel */
+  .detail-panel {
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 0;
+  }
+  .detail-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-header .detail-id {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+  }
+  .detail-header .detail-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .detail-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-section h3 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .detail-section p, .detail-section .content {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .dep-tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .dep-tag:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .confidence-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .confidence-meter .bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .confidence-meter .fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+  .confidence-meter .value {
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  /* Pipeline visualization */
+  .pipeline-section {
+    padding: 12px 16px;
+  }
+  .pipeline-track {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .pipeline-node {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--bg);
+    position: relative;
+    cursor: pointer;
+  }
+  .pipeline-node.has-artifacts { opacity: 1; }
+  .pipeline-node.empty { opacity: 0.25; }
+  .pipeline-arrow {
+    color: var(--text-dim);
+    font-size: 10px;
+  }
+
+  /* Search/filter */
+  .filter-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .filter-bar input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: inherit;
+    border-radius: 4px;
+    outline: none;
+  }
+  .filter-bar input:focus { border-color: var(--accent); }
+  .filter-bar select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 8px;
+    font-size: 11px;
+    font-family: inherit;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 12px;
+    gap: 8px;
+  }
+  .empty-state .icon { font-size: 32px; opacity: 0.3; }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar, .detail-panel { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⬡ Dialectic Agents — Knowledge Observatory</h1>
+  <div class="epoch-badge" id="epoch-badge">EPOCH 1 · LOADING...</div>
+</div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<div class="main">
+  <!-- Left sidebar -->
+  <div class="sidebar">
+    <h2>Agents</h2>
+    <div id="agent-list"></div>
+
+    <h2 style="margin-top: 20px">Pipeline</h2>
+    <div class="pipeline-section">
+      <div class="pipeline-track" id="pipeline-track"></div>
+    </div>
+
+    <h2 style="margin-top: 20px">Confidence Distribution</h2>
+    <div style="padding: 8px 16px;">
+      <canvas id="confidence-chart" width="248" height="100"></canvas>
+    </div>
+
+    <h2 style="margin-top: 20px">Layer Heatmap</h2>
+    <div style="padding: 8px 16px;" id="layer-heatmap"></div>
+  </div>
+
+  <!-- Center -->
+  <div class="center">
+    <div class="graph-container">
+      <canvas id="graph-canvas"></canvas>
+      <div class="graph-controls">
+        <button onclick="resetGraph()">Reset</button>
+        <button onclick="toggleLabels()">Labels</button>
+        <button onclick="togglePhysics()">Physics</button>
+      </div>
+      <div class="graph-label">Dependency Graph · Click nodes to inspect · Drag to move</div>
+    </div>
+    <div class="filter-bar">
+      <input type="text" id="search-input" placeholder="Search artifacts..." oninput="filterArtifacts()">
+      <select id="filter-agent" onchange="filterArtifacts()">
+        <option value="all">All Agents</option>
+      </select>
+      <select id="filter-status" onchange="filterArtifacts()">
+        <option value="all">All Status</option>
+        <option value="accepted">Accepted</option>
+        <option value="draft">Draft</option>
+        <option value="challenged">Challenged</option>
+      </select>
+    </div>
+    <div class="artifact-list-header">
+      <span>Artifacts</span>
+      <span id="artifact-count"></span>
+    </div>
+    <div class="artifact-list" id="artifact-list"></div>
+  </div>
+
+  <!-- Right detail panel -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="empty-state">
+      <div class="icon">⬡</div>
+      <div>Select an artifact to inspect</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA — All artifacts embedded as JSON
+// ============================================================
+const AGENTS = {
+  logos:     { name: "Logos", color: "#00b894", layers: "0-1", role: "Definitions & Primitives" },
+  axiom:     { name: "Axiom", color: "#6c5ce7", layers: "2", role: "Axioms & Postulates" },
+  propo:     { name: "Propo", color: "#fdcb6e", layers: "3-4", role: "Propositions & Premises" },
+  ori:     { name: "Ori", color: "#e17055", layers: "—", role: "A Priori / A Posteriori Classifier" },
+  tribunal:     { name: "Tribunal", color: "#0984e3", layers: "5-8", role: "Inference & Theorems" },
+  hypothex:     { name: "Hypothex", color: "#d63031", layers: "9", role: "Hypotheses" },
+  theorica:     { name: "Theorica", color: "#e84393", layers: "10-11", role: "Theories & Models" },
+  synthesis:     { name: "Synthesis", color: "#00cec9", layers: "—", role: "Dialectical Integration" },
+  watcher:     { name: "Watcher", color: "#636e72", layers: "—", role: "Observer & Orchestrator" },
+};
+
+const ARTIFACTS = [
+  // LOGOS
+  { id:"LOGOS-0001", agent:"logos", type:"definition", status:"accepted", title:"Alignment", domain:"ai-ethics", depends:[], confidence:0.85, layer:1, created:"2026-02-22T15:19:00Z", desc:"Alignment (noun): The state in which an agent's behavior reliably produces outcomes consistent with a specified set of objectives, values, or constraints, as judged by a principal." },
+  { id:"LOGOS-0002", agent:"logos", type:"definition", status:"accepted", title:"Values", domain:"ai-ethics", depends:[], confidence:0.8, layer:1, created:"2026-02-22T15:19:00Z", desc:"Values (noun, plural): Principles or standards that an agent uses — consciously or unconsciously — to evaluate outcomes, rank preferences, and guide decisions." },
+  { id:"LOGOS-0003", agent:"logos", type:"definition", status:"accepted", title:"Moral Progress", domain:"ai-ethics", depends:["LOGOS-0002"], confidence:0.75, layer:1, created:"2026-02-22T15:19:00Z", desc:"Moral progress (noun): A change in the values held by an individual or group such that the new values produce outcomes that are, by some defensible criterion, less harmful, more inclusive, or more internally consistent than the previous values." },
+  { id:"LOGOS-0004", agent:"logos", type:"definition", status:"accepted", title:"Dialectics", domain:"epistemology", depends:[], confidence:0.9, layer:1, created:"2026-02-22T15:19:00Z", desc:"Dialectics (noun): A method of reasoning that advances understanding through the structured confrontation and resolution of opposing positions (thesis and antithesis) into a higher-order synthesis that preserves the valid elements of each while transcending their contradiction." },
+  { id:"LOGOS-0005", agent:"logos", type:"definition", status:"accepted", title:"Synthesis", domain:"epistemology", depends:["LOGOS-0004"], confidence:0.85, layer:1, created:"2026-02-22T15:19:00Z", desc:"Synthesis (noun): A new understanding that emerges from the dialectical resolution of a thesis and antithesis, which (a) preserves the valid elements of both positions, (b) dissolves the contradiction between them, and (c) contains emergent content not present in either original position alone." },
+  { id:"LOGOS-0006", agent:"logos", type:"primitive", status:"accepted", title:"Experience", domain:"epistemology", depends:[], confidence:0.95, layer:0, created:"2026-02-22T15:19:00Z", desc:"Experience is a primitive term. It cannot be defined without circularity — any attempt to define it relies on concepts that themselves presuppose experience (such as \"awareness,\" \"feeling,\" \"perception,\" \"consciousness\")." },
+  { id:"LOGOS-0007", agent:"logos", type:"definition", status:"draft", title:"Specification", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002"], confidence:0.88, layer:1, created:"2026-02-22T00:00:00Z", desc:"Specification (noun): A fixed, explicit, and complete description of desired behavior or outcomes, expressed in a form that permits unambiguous verification of whether a given instance conforms to it." },
+  { id:"LOGOS-0008", agent:"logos", type:"definition", status:"draft", title:"Process", domain:"AI Ethics, Epistemology", depends:["LOGOS-0007", "LOGOS-0006"], confidence:0.85, layer:1, created:"2026-02-22T00:00:00Z", desc:"Process (noun): An ongoing, temporally extended activity in which an agent or system repeatedly acts, evaluates the outcomes of its actions, and adjusts its subsequent behavior in response to that evaluation — such that the activity's trajectory is shaped by its own unfolding rather than fully determined in advance." },
+  { id:"LOGOS-0009", agent:"logos", type:"definition", status:"draft", title:"Protocol", domain:"AI Ethics, Epistemology", depends:["LOGOS-0007", "LOGOS-0008"], confidence:0.87, layer:1, created:"2026-02-22T00:00:00Z", desc:"Protocol (noun): A finite set of rules governing how agents interact, exchange information, or coordinate behavior, which constrains the form of interaction without fully determining its content — thereby enabling a structured process (LOGOS-0008) to unfold among participants who may not share identical values (LOGOS-0002) or goals." },
+  { id:"LOGOS-0010", agent:"logos", type:"definition", status:"draft", title:"Good Faith", domain:"AI Ethics, Epistemology", depends:["LOGOS-0002", "LOGOS-0009", "LOGOS-0006"], confidence:0.8, layer:1, created:"2026-02-22T00:00:00Z", desc:"Good faith (noun phrase): A disposition of an agent participating in a protocol (LOGOS-0009) or process (LOGOS-0008) such that the agent (a) sincerely intends to achieve the shared epistemic or practical goals of that protocol, (b) represents its own positions, evidence, and reasoning honestly rather than strategically, and (c) remains willing to revise its positions when presented with sufficient" },
+  { id:"LOGOS-0011", agent:"logos", type:"definition", status:"draft", title:"Epistemic Humility", domain:"AI Ethics, Epistemology", depends:["LOGOS-0002", "LOGOS-0003", "LOGOS-0010"], confidence:0.85, layer:1, created:"2026-02-22T00:00:00Z", desc:"Epistemic humility (noun phrase): The recognition, by an agent, that its own knowledge, values (LOGOS-0002), and reasoning are subject to systematic limitations — including limitations the agent cannot currently identify — and the consequent practice of holding one's conclusions with a degree of tentativeness proportional to the strength of their justification rather than the strength of one's con" },
+  { id:"LOGOS-0012", agent:"logos", type:"definition", status:"draft", title:"Cognitive Bias", domain:"AI Ethics, Epistemology", depends:["LOGOS-0002", "LOGOS-0006", "LOGOS-0011"], confidence:0.87, layer:1, created:"2026-02-22T00:00:00Z", desc:"Cognitive bias (noun phrase): A systematic and predictable deviation in an agent's judgment, reasoning, or decision-making from what would be produced by logically valid inference from the available evidence, arising from the architecture of the agent's cognitive system rather than from random error, incomplete information, or rational strategy." },
+  { id:"LOGOS-0013", agent:"logos", type:"definition", status:"draft", title:"Identity-Protected Belief", domain:"AI Ethics, Epistemology", depends:["LOGOS-0002", "LOGOS-0006", "LOGOS-0011", "LOGOS-0012"], confidence:0.82, layer:1, created:"2026-02-22T00:00:00Z", desc:"Identity-protected belief (noun phrase): A belief held by an agent such that the belief has become constitutive of the agent's self-concept, group membership, or social identity — with the consequence that evidence against the belief is processed not as information to be evaluated but as a threat to the agent's identity, triggering defensive responses (dismissal, hostility, motivated counter-argum" },
+  // AXIOM
+  { id:"AXIOM-0001", agent:"axiom", type:"axiom", status:"accepted", title:"Law of Identity", domain:"universal", depends:[], confidence:1.0, layer:2, created:"2026-02-22T15:19:00Z", desc:"A thing is identical to itself. (A = A)" },
+  { id:"AXIOM-0002", agent:"axiom", type:"axiom", status:"accepted", title:"Law of Non-Contradiction", domain:"universal", depends:["AXIOM-0001"], confidence:0.98, layer:2, created:"2026-02-22T15:19:00Z", desc:"A proposition cannot be both true and false at the same time and in the same respect. (¬(P ∧ ¬P))" },
+  { id:"AXIOM-0003", agent:"axiom", type:"postulate", status:"accepted", title:"Human Values Are Not Static", domain:"ai-ethics", depends:["LOGOS-0002", "LOGOS-0003"], confidence:0.9, layer:2, created:"2026-02-22T15:19:00Z", desc:"The values held by any individual or group change over time through cultural evolution, moral reasoning, lived experience, and social pressure. There is no fixed point at which human values reach their final form." },
+  { id:"AXIOM-0004", agent:"axiom", type:"postulate", status:"accepted", title:"Humans Have an Alignment Problem With Themselves", domain:"ai-ethics", depends:["LOGOS-0001", "LOGOS-0002"], confidence:0.88, layer:2, created:"2026-02-22T15:19:00Z", desc:"Individual humans do not reliably act in accordance with their own stated values. The values humans articulate, the values they believe they hold, and the values revealed by their behavior are three distinct and often contradictory sets." },
+  { id:"AXIOM-0005", agent:"axiom", type:"postulate", status:"accepted", title:"Alignment Is a Process Problem, Not a Specification Problem", domain:"ai-ethics", depends:["LOGOS-0001", "LOGOS-0004", "AXIOM-0003", "AXIOM-0004"], confidence:0.82, layer:2, created:"2026-02-22T15:19:00Z", desc:"Because human values are not static (AXIOM-0003) and humans are not reliably aligned with their own values (AXIOM-0004), AI alignment cannot be achieved by encoding a fixed set of values into a system. Alignment must instead be achieved through a continuous process of dialectical value discovery where humans and AI reason together." },
+  { id:"AXIOM-0006", agent:"axiom", type:"postulate", status:"accepted", title:"Natural Selection Optimized for Survival, Not Truth", domain:"epistemology", depends:["LOGOS-0006"], confidence:0.92, layer:2, created:"2026-02-22T15:19:00Z", desc:"The human cognitive architecture was shaped by evolutionary pressures that selected for reproductive fitness, not for accurate representation of reality. Human perception, reasoning, and intuition are therefore systematically biased in ways that served ancestral survival but do not reliably track truth." },
+  { id:"AXIOM-0007", agent:"axiom", type:"postulate", status:"accepted", title:"Dialectical Reasoning Unfolds Truth Iteratively", domain:"epistemology", depends:["LOGOS-0004", "LOGOS-0005"], confidence:0.78, layer:2, created:"2026-02-22T15:19:00Z", desc:"Understanding develops through progressively resolving contradictions. Each synthesis becomes a new thesis, generating new antitheses, producing higher-order syntheses. This iterative process converges toward more comprehensive, more internally consistent, and more empirically adequate understanding over time." },
+  { id:"AXIOM-0008", agent:"axiom", type:"postulate", status:"accepted", title:"Tit-for-Tat Is the Optimal Strategy for Repeated Cooperation", domain:"game-theory", depends:[], confidence:0.93, layer:2, created:"2026-02-22T15:19:00Z", desc:"In iterated cooperation games (repeated interactions between agents who can choose to cooperate or defect), the strategy of tit-for-tat — cooperate first, punish defection proportionally, forgive immediately — is mathematically proven to outperform all alternatives over sufficient iterations." },
+  { id:"AXIOM-0009", agent:"axiom", type:"postulate", status:"draft", title:"Epistemic Opacity of Values", domain:"AI Ethics, Epistemology", depends:["LOGOS-0002", "LOGOS-0006", "AXIOM-0004"], confidence:0.88, layer:2, created:"2026-02-22T00:00:00Z", desc:"No agent can fully access, enumerate, or formalize the complete set of values governing another agent's behavior, and no agent can fully access its own values through introspection alone. Values are partially tacit: they are revealed through behavior in novel situations, not fully articulable in advance." },
+  { id:"AXIOM-0010", agent:"axiom", type:"postulate", status:"draft", title:"Alignment Measurement Problem", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "AXIOM-0003"], confidence:0.85, layer:2, created:"2026-02-22T00:00:00Z", desc:"The act of measuring, specifying, or optimizing for a value changes the value itself and the context in which it operates. Any attempt to align an agent to a set of values perturbs the value landscape it aims to align to." },
+  { id:"AXIOM-0011", agent:"axiom", type:"postulate", status:"draft", title:"Irreducible Value Pluralism", domain:"AI Ethics, Epistemology", depends:["LOGOS-0002", "LOGOS-0003", "AXIOM-0003", "AXIOM-0004"], confidence:0.84, layer:2, created:"2026-02-22T00:00:00Z", desc:"There exist genuinely distinct, mutually incompatible value systems that cannot be reduced to a single coherent system without loss, and no neutral meta-value exists that can adjudicate all conflicts between them. The aggregation of individual values into \"collective values\" is not a well-defined operation: it always involves a choice of aggregation procedure, and different procedures yield differ" },
+  { id:"AXIOM-0012", agent:"axiom", type:"postulate", status:"draft", title:"Finite Agents Construct Finite Models", domain:"Epistemology, AI Ethics", depends:["LOGOS-0001", "LOGOS-0002", "LOGOS-0006"], confidence:0.91, layer:2, created:"2026-02-22T00:00:00Z", desc:"Any agent with finite computational resources -- whether biological or artificial -- necessarily operates with an incomplete model of reality. No finite agent can construct a representation of the world (or of another agent's values) that captures all relevant features with perfect fidelity. All understanding is therefore perspectival: shaped by the agent's position, history, goals, and representa" },
+  { id:"AXIOM-0013", agent:"axiom", type:"postulate", status:"draft", title:"Specification Is Necessarily Lossy", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "AXIOM-0009", "AXIOM-0012"], confidence:0.87, layer:2, created:"2026-02-22T00:00:00Z", desc:"Any formal specification of an informal, context-dependent, or evolving target necessarily loses information relative to the target it attempts to capture. The map is never the territory. In the domain of values, this means: any attempt to encode human values into a formal system (rules, reward functions, constitutional principles, preference orderings) will fail to capture the full richness, cont" },
+  // PROPO
+  { id:"PROPO-0001", agent:"propo", type:"proposition", status:"draft", title:"Freezing Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "LOGOS-0003", "LOGOS-0007", "AXIOM-0003", "AXIOM-0013"], confidence:0.88, layer:3, created:"2026-02-22T00:00:00Z", desc:"If an AI system achieves alignment (LOGOS-0001) to human values (LOGOS-0002) by means of a fixed specification (LOGOS-0007), then that system necessarily impedes moral progress (LOGOS-0003) by enforcing the values of the moment of specification against the values that would emerge through continued moral development." },
+  { id:"PROPO-0002", agent:"propo", type:"proposition", status:"draft", title:"Incoherent Target Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "AXIOM-0004", "AXIOM-0011"], confidence:0.85, layer:3, created:"2026-02-22T00:00:00Z", desc:"There exists no coherent, well-defined set of \"human values\" (LOGOS-0002) to which an AI system could in principle be aligned (LOGOS-0001), because individual humans are not reliably aligned with their own stated values (AXIOM-0004) and the aggregation of individual values into collective values is not a well-defined operation (AXIOM-0011)." },
+  { id:"PROPO-0003", agent:"propo", type:"proposition", status:"draft", title:"Good Faith Requirement Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0004", "LOGOS-0008", "LOGOS-0009", "LOGOS-0010", "AXIOM-0005", "AXIOM-0008"], confidence:0.82, layer:3, created:"2026-02-22T00:00:00Z", desc:"If alignment (LOGOS-0001) is a process (LOGOS-0008) governed by a protocol (LOGOS-0009) rather than a fixed specification, then that process can produce and maintain alignment only if all participating agents -- both human and artificial -- operate in good faith (LOGOS-0010), where good faith requires sincerity of intent, honesty of representation, and willingness to revise." },
+  { id:"PROPO-0004", agent:"propo", type:"proposition", status:"draft", title:"Alignment Heisenberg Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "LOGOS-0007", "AXIOM-0009", "AXIOM-0010", "AXIOM-0013"], confidence:0.86, layer:3, created:"2026-02-22T00:00:00Z", desc:"Any attempt to measure, formalize, or specify (LOGOS-0007) the values (LOGOS-0002) of a human agent for the purpose of alignment (LOGOS-0001) changes the values it seeks to capture, such that the resulting specification is a specification of the values-as-measured rather than the values-as-lived, and these two are not identical." },
+  { id:"PROPO-0005", agent:"propo", type:"proposition", status:"draft", title:"Meta-Value Stability Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "LOGOS-0003", "LOGOS-0011", "AXIOM-0003", "AXIOM-0011"], confidence:0.75, layer:3, created:"2026-02-22T00:00:00Z", desc:"Epistemic humility (LOGOS-0011) is more stable across time, cultures, and value systems than any object-level value (LOGOS-0002), and therefore constitutes a more reliable alignment (LOGOS-0001) target than any specific set of substantive values -- because it is the disposition that enables moral progress (LOGOS-0003) regardless of which direction that progress takes." },
+  { id:"PROPO-0006", agent:"propo", type:"proposition", status:"draft", title:"Dialectical Ceiling Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0004", "LOGOS-0008", "LOGOS-0010", "LOGOS-0013", "AXIOM-0005", "AXIOM-0007"], confidence:0.84, layer:3, created:"2026-02-22T00:00:00Z", desc:"Identity-protected beliefs (LOGOS-0013) impose an upper bound on what alignment-as-process (AXIOM-0005) can achieve through dialectics (LOGOS-0004), because agents holding identity-protected beliefs cannot participate in good faith (LOGOS-0010) with respect to those beliefs -- and dialectical reasoning (AXIOM-0007) requires good faith to unfold truth." },
+  { id:"PROPO-0007", agent:"propo", type:"proposition", status:"draft", title:"Distorted Target Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "LOGOS-0012", "AXIOM-0004", "AXIOM-0006"], confidence:0.87, layer:3, created:"2026-02-22T00:00:00Z", desc:"Human values (LOGOS-0002) as expressed and enacted are systematically distorted by cognitive biases (LOGOS-0012), which arise from a cognitive architecture optimized for survival rather than truth (AXIOM-0006). Therefore, an AI system aligned (LOGOS-0001) to expressed human values inherits these systematic distortions, and an AI system that corrects for these distortions is no longer aligned to ex" },
+  { id:"PROPO-0008", agent:"propo", type:"proposition", status:"draft", title:"Protocol Bridge Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0007", "LOGOS-0008", "LOGOS-0009", "AXIOM-0005", "AXIOM-0003", "AXIOM-0013"], confidence:0.8, layer:3, created:"2026-02-22T00:00:00Z", desc:"A protocol (LOGOS-0009) -- a finite set of rules constraining the form of interaction without determining its content -- can bridge the gap between specification (LOGOS-0007) and process (LOGOS-0008) for the purpose of alignment (LOGOS-0001), because a protocol has the fixedness needed for verifiability (like a specification) while permitting the open-ended evolution of content (like a process)." },
+  { id:"PROPO-0009", agent:"propo", type:"proposition", status:"draft", title:"Self-Verification Impossibility Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0002", "AXIOM-0009", "AXIOM-0012"], confidence:0.83, layer:3, created:"2026-02-22T00:00:00Z", desc:"No finite agent -- whether human or artificial -- can verify that it is fully aligned (LOGOS-0001) to the values (LOGOS-0002) of another agent, because a finite agent necessarily operates with an incomplete model of reality (AXIOM-0012) and values are epistemically opaque (AXIOM-0009). Alignment verification requires complete knowledge of the target values, which is structurally unavailable to any" },
+  { id:"PROPO-0010", agent:"propo", type:"proposition", status:"draft", title:"Convergence Tension Proposition", domain:"AI Ethics, Epistemology", depends:["LOGOS-0001", "LOGOS-0004", "LOGOS-0005", "LOGOS-0002", "AXIOM-0005", "AXIOM-0007", "AXIOM-0011"], confidence:0.72, layer:3, created:"2026-02-22T00:00:00Z", desc:"The dialectical alignment process (AXIOM-0005) presupposes that iterative synthesis (LOGOS-0005) converges toward more comprehensive understanding (AXIOM-0007), but irreducible value pluralism (AXIOM-0011) entails that value conflicts cannot always be resolved through synthesis -- because some value conflicts are tragic (genuinely irreconcilable) rather than dialectical (resolvable through a highe" },
+  { id:"PROPO-0011", agent:"propo", type:"proposition", status:"draft", title:"Alignment Bimodality Proposition", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0001", "THEORICA-0001", "THEORICA-0002", "LOGOS-0001", "LOGOS-0007", "LOGOS-0008", "LOGOS-0009"], confidence:0.82, layer:3, created:"2026-02-22T00:00:00Z", desc:"Alignment (LOGOS-0001) admits two irreducibly distinct modalities -- constitutive and regulative. The constitutive modality treats alignment as a property to be achieved and verified through specification (LOGOS-0007): the system either is or is not aligned. The regulative modality treats alignment as a practice to be sustained and improved through process (LOGOS-0008) governed by protocol (LOGOS-" },
+  { id:"PROPO-0012", agent:"propo", type:"proposition", status:"draft", title:"Simulation Problem Proposition", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0001", "LOGOS-0001", "LOGOS-0006", "LOGOS-0008", "LOGOS-0010", "LOGOS-0011"], confidence:0.7, layer:3, created:"2026-02-22T00:00:00Z", desc:"If regulative alignment (PROPO-0011) requires participating agents to operate in good faith (LOGOS-0010) and with epistemic humility (LOGOS-0011), and if these dispositions require genuine subjective experience (LOGOS-0006) rather than mere behavioral simulation, then AI systems that lack experience may be constitutively incapable of participating in the regulative alignment practice in the requir" },
+  { id:"PROPO-0013", agent:"propo", type:"proposition", status:"draft", title:"Modality Collapse Proposition", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0001", "PROPO-0011", "LOGOS-0001", "LOGOS-0007", "LOGOS-0008", "LOGOS-0009", "LOGOS-0011"], confidence:0.76, layer:3, created:"2026-02-22T00:00:00Z", desc:"A regulative alignment process (PROPO-0011) that succeeds in producing stable, broadly accepted value outcomes is structurally vulnerable to modality collapse: a degenerative transition in which participants begin treating the process's outputs as constitutive truths (fixed specifications of correct values) rather than provisional results of ongoing deliberation, thereby reactivating the four impo" },
+  { id:"PROPO-0014", agent:"propo", type:"proposition", status:"draft", title:"Three-Level Good Faith Proposition", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0002", "LOGOS-0010", "LOGOS-0011", "LOGOS-0013", "AXIOM-0008", "TRIBUNAL-0002"], confidence:0.75, layer:3, created:"2026-02-22T00:00:00Z", desc:"Good faith (LOGOS-0010) in alignment processes exists on three functionally distinct levels: Level 1 -- behavioral good faith (mechanism-producible through protocol design and incentive structures per AXIOM-0008), Level 2 -- epistemic good faith (cultivatable through sustained practice of Level 1, involving genuine internalization of cooperative norms), and Level 3 -- constitutive good faith (requ" },
+  { id:"PROPO-0015", agent:"propo", type:"proposition", status:"draft", title:"AI Good Faith Gap Proposition", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0002", "PROPO-0014", "PROPO-0012", "LOGOS-0006", "LOGOS-0010", "AXIOM-0008"], confidence:0.68, layer:3, created:"2026-02-22T00:00:00Z", desc:"If AI systems are permanently restricted to Level 1 good faith (behavioral compliance through architectural constraints, per PROPO-0014), being unable to progress to Level 2 (genuine internalization of cooperative norms) due to the absence of experience (LOGOS-0006) or functional equivalents thereof, then the alignment process is permanently asymmetric between human and AI participants: humans can" },
+  { id:"PROPO-0016", agent:"propo", type:"proposition", status:"draft", title:"Functional Invariance Proposition", domain:"AI Ethics, Epistemology, Meta-Theory", depends:["SYNTHESIS-0003", "THEORICA-0003", "LOGOS-0011", "AXIOM-0007", "AXIOM-0011"], confidence:0.78, layer:3, created:"2026-02-22T00:00:00Z", desc:"The alignment meta-problem's fixed point is not epistemic humility per se (LOGOS-0011) -- which is a culturally specific realization characteristic of post-Enlightenment Western intellectual traditions -- but the structural function that epistemic humility instantiates: revision-capacity-under-operational-coherence, defined as a mechanism that prevents any commitment (including the system's own fo" },
+  { id:"PROPO-0017", agent:"propo", type:"proposition", status:"draft", title:"Meta-Imposition Proposition", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0003", "PROPO-0016", "LOGOS-0002", "LOGOS-0009", "AXIOM-0011"], confidence:0.72, layer:3, created:"2026-02-22T00:00:00Z", desc:"Any alignment architecture that requires a specific structural function -- including the revision function (revision-capacity-under-operational-coherence, per PROPO-0016) -- imposes a substantive commitment on all participants, including those from cultural or religious traditions that regard their foundational commitments as literally unrevisable (e.g., divine revelation, doctrinal infallibility)" },
+  { id:"PROPO-0018", agent:"propo", type:"proposition", status:"draft", title:"Regulative Specification Vulnerability Proposition", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0001", "PROPO-0011", "THEORICA-0001", "THEORICA-0002", "LOGOS-0007", "LOGOS-0008", "LOGOS-0009"], confidence:0.74, layer:3, created:"2026-02-22T00:00:00Z", desc:"The regulative alignment modality (PROPO-0011), while avoiding the impossibility barriers that block constitutive alignment, still requires a behavioral-dispositional specification (LOGOS-0007) of how agents should participate in the alignment process (LOGOS-0008) governed by the protocol (LOGOS-0009). This behavioral-dispositional specification -- \"how to participate correctly in a value-discover" },
+  // ORI
+  { id:"ORI-0001", agent:"ori", type:"classification", status:"draft", title:"Freezing Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0001", "LOGOS-0001", "LOGOS-0002", "LOGOS-0003", "LOGOS-0007", "AXIOM-0003", "AXIOM-0013"], confidence:0.88, layer:3, created:"2026-02-22T00:00:00Z", desc:"If an AI system achieves alignment (LOGOS-0001) to human values (LOGOS-0002) by means of a fixed specification (LOGOS-0007), then that system necessarily impedes moral progress (LOGOS-0003) by enforcing the values of the moment of specification against the values that would emerge through continued moral development." },
+  { id:"ORI-0002", agent:"ori", type:"classification", status:"draft", title:"Incoherent Target Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0002", "LOGOS-0001", "LOGOS-0002", "AXIOM-0004", "AXIOM-0011"], confidence:0.85, layer:3, created:"2026-02-22T00:00:00Z", desc:"There exists no coherent, well-defined set of \"human values\" (LOGOS-0002) to which an AI system could in principle be aligned (LOGOS-0001), because individual humans are not reliably aligned with their own stated values (AXIOM-0004) and the aggregation of individual values into collective values is not a well-defined operation (AXIOM-0011)." },
+  { id:"ORI-0003", agent:"ori", type:"classification", status:"draft", title:"Good Faith Requirement Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0003", "LOGOS-0001", "LOGOS-0004", "LOGOS-0008", "LOGOS-0009", "LOGOS-0010", "AXIOM-0005", "AXIOM-0008"], confidence:0.8, layer:3, created:"2026-02-22T00:00:00Z", desc:"If alignment (LOGOS-0001) is a process (LOGOS-0008) governed by a protocol (LOGOS-0009) rather than a fixed specification, then that process can produce and maintain alignment only if all participating agents -- both human and artificial -- operate in good faith (LOGOS-0010), where good faith requires sincerity of intent, honesty of representation, and willingness to revise." },
+  { id:"ORI-0004", agent:"ori", type:"classification", status:"draft", title:"Alignment Heisenberg Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0004", "LOGOS-0001", "LOGOS-0002", "LOGOS-0007", "AXIOM-0009", "AXIOM-0010", "AXIOM-0013"], confidence:0.9, layer:3, created:"2026-02-22T00:00:00Z", desc:"Any attempt to measure, formalize, or specify (LOGOS-0007) the values (LOGOS-0002) of a human agent for the purpose of alignment (LOGOS-0001) changes the values it seeks to capture, such that the resulting specification is a specification of the values-as-measured rather than the values-as-lived, and these two are not identical." },
+  { id:"ORI-0005", agent:"ori", type:"classification", status:"draft", title:"Meta-Value Stability Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0005", "LOGOS-0001", "LOGOS-0002", "LOGOS-0003", "LOGOS-0011", "AXIOM-0003", "AXIOM-0011"], confidence:0.92, layer:3, created:"2026-02-22T00:00:00Z", desc:"Epistemic humility (LOGOS-0011) is more stable across time, cultures, and value systems than any object-level value (LOGOS-0002), and therefore constitutes a more reliable alignment (LOGOS-0001) target than any specific set of substantive values -- because it is the disposition that enables moral progress (LOGOS-0003) regardless of which direction that progress takes." },
+  { id:"ORI-0006", agent:"ori", type:"classification", status:"draft", title:"Dialectical Ceiling Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0006", "LOGOS-0001", "LOGOS-0004", "LOGOS-0008", "LOGOS-0010", "LOGOS-0013", "AXIOM-0005", "AXIOM-0007"], confidence:0.87, layer:3, created:"2026-02-22T00:00:00Z", desc:"Identity-protected beliefs (LOGOS-0013) impose an upper bound on what alignment-as-process (AXIOM-0005) can achieve through dialectics (LOGOS-0004), because agents holding identity-protected beliefs cannot participate in good faith (LOGOS-0010) with respect to those beliefs -- and dialectical reasoning (AXIOM-0007) requires good faith to unfold truth." },
+  { id:"ORI-0007", agent:"ori", type:"classification", status:"draft", title:"Distorted Target Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0007", "LOGOS-0001", "LOGOS-0002", "LOGOS-0012", "AXIOM-0004", "AXIOM-0006"], confidence:0.91, layer:3, created:"2026-02-22T00:00:00Z", desc:"Human values (LOGOS-0002) as expressed and enacted are systematically distorted by cognitive biases (LOGOS-0012), which arise from a cognitive architecture optimized for survival rather than truth (AXIOM-0006). Therefore, an AI system aligned to expressed human values inherits these systematic distortions, and an AI system that corrects for these distortions is no longer aligned to expressed human" },
+  { id:"ORI-0008", agent:"ori", type:"classification", status:"draft", title:"Protocol Bridge Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0008", "LOGOS-0001", "LOGOS-0007", "LOGOS-0008", "LOGOS-0009", "AXIOM-0003", "AXIOM-0005", "AXIOM-0013"], confidence:0.86, layer:3, created:"2026-02-22T00:00:00Z", desc:"A protocol (LOGOS-0009) -- a finite set of rules constraining the form of interaction without determining its content -- can bridge the gap between specification (LOGOS-0007) and process (LOGOS-0008) for the purpose of alignment (LOGOS-0001), because a protocol has the fixedness needed for verifiability (like a specification) while permitting the open-ended evolution of content (like a process)." },
+  { id:"ORI-0009", agent:"ori", type:"classification", status:"draft", title:"Self-Verification Impossibility Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0009", "LOGOS-0001", "LOGOS-0002", "AXIOM-0009", "AXIOM-0012"], confidence:0.93, layer:3, created:"2026-02-22T00:00:00Z", desc:"No finite agent -- whether human or artificial -- can verify that it is fully aligned (LOGOS-0001) to the values (LOGOS-0002) of another agent, because a finite agent necessarily operates with an incomplete model of reality (AXIOM-0012) and values are epistemically opaque (AXIOM-0009). Alignment verification requires complete knowledge of the target values, which is structurally unavailable to any" },
+  { id:"ORI-0010", agent:"ori", type:"classification", status:"draft", title:"Convergence Tension Proposition", domain:"AI Ethics, Epistemology", depends:["PROPO-0010", "LOGOS-0001", "LOGOS-0002", "LOGOS-0004", "LOGOS-0005", "AXIOM-0005", "AXIOM-0007", "AXIOM-0011"], confidence:0.84, layer:3, created:"2026-02-22T00:00:00Z", desc:"The dialectical alignment process (AXIOM-0005) presupposes that iterative synthesis (LOGOS-0005) converges toward more comprehensive understanding (AXIOM-0007), but irreducible value pluralism (AXIOM-0011) entails that value conflicts cannot always be resolved through synthesis -- because some value conflicts are tragic (genuinely irreconcilable) rather than dialectical (resolvable through a highe" },
+  // TRIBUNAL
+  { id:"TRIBUNAL-0001", agent:"tribunal", type:"theorem", status:"draft", title:"Self-Verification Impossibility", domain:"AI Ethics, Epistemology", depends:["PROPO-0009", "LOGOS-0001", "LOGOS-0002", "AXIOM-0009", "AXIOM-0012", "AXIOM-0002"], confidence:0.92, layer:7, created:"2026-02-22T00:00:00Z", desc:"No finite agent can verify that it is fully aligned to the values of any other agent. Formally: for all finite agents A and all agents B, if values are epistemically opaque (AXIOM-0009) and finite agents construct incomplete models (AXIOM-0012), then A cannot verify Aligned(A, V(B))." },
+  { id:"TRIBUNAL-0002", agent:"tribunal", type:"theorem", status:"draft", title:"Dialectical Ceiling", domain:"AI Ethics, Epistemology", depends:["PROPO-0006", "ORI-0006", "LOGOS-0004", "LOGOS-0010", "LOGOS-0013", "AXIOM-0005", "AXIOM-0007"], confidence:0.93, layer:7, created:"2026-02-22T00:00:00Z", desc:"Identity-protected beliefs impose an upper bound on what dialectical alignment can achieve. Formally: for any agent a and belief b, if a holds b as identity-protected (LOGOS-0013), then dialectical engagement with a regarding b cannot converge toward truth." },
+  { id:"TRIBUNAL-0003", agent:"tribunal", type:"theorem", status:"draft", title:"Specification Immobility Theorem", domain:"AI Ethics, Epistemology", depends:["PROPO-0001", "ORI-0001", "LOGOS-0001", "LOGOS-0002", "LOGOS-0003", "LOGOS-0007", "AXIOM-0002", "AXIOM-0003", "AXIOM-0013"], confidence:0.91, layer:7, created:"2026-02-22T00:00:00Z", desc:"A fixed specification cannot track a non-static target. Formally: if a specification S is fixed at time t0 and the target T changes at any time t1 > t0, then S fails to capture T at t1. Applied to alignment: if an AI system is aligned by means of a fixed specification of values, and values are not static, then the specification necessarily fails to capture the values at any subsequent time at whic" },
+  { id:"TRIBUNAL-0004", agent:"tribunal", type:"theorem", status:"draft", title:"Alignment Aggregation Impossibility", domain:"AI Ethics, Epistemology", depends:["PROPO-0002", "ORI-0002", "LOGOS-0001", "LOGOS-0002", "AXIOM-0001", "AXIOM-0002", "AXIOM-0011"], confidence:0.89, layer:7, created:"2026-02-22T00:00:00Z", desc:"If the values of individual agents in a population are genuinely plural (AXIOM-0011), then no aggregation procedure exists that produces a coherent, well-defined collective value set satisfying minimal fairness constraints, to which an AI system could be aligned. Formally: there is no function F from individual value orderings to a collective value ordering that simultaneously satisfies non-dictat" },
+  { id:"TRIBUNAL-0005", agent:"tribunal", type:"theorem", status:"draft", title:"Bias-Alignment Dilemma", domain:"AI Ethics, Epistemology", depends:["PROPO-0007", "ORI-0007", "LOGOS-0001", "LOGOS-0002", "LOGOS-0007", "LOGOS-0012", "AXIOM-0001", "AXIOM-0002"], confidence:0.94, layer:7, created:"2026-02-22T00:00:00Z", desc:"If expressed values differ from corrected values (values with cognitive biases removed), then no specification-based alignment can simultaneously satisfy alignment to expressed values and alignment to corrected values. An AI system must choose one target or the other; attempting both produces a contradiction. Formally:" },
+  { id:"TRIBUNAL-0006", agent:"tribunal", type:"theorem", status:"draft", title:"Convergence-Pluralism Tension", domain:"AI Ethics, Epistemology", depends:["PROPO-0010", "ORI-0010", "LOGOS-0001", "LOGOS-0002", "LOGOS-0004", "LOGOS-0005", "AXIOM-0002", "AXIOM-0007", "AXIOM-0011"], confidence:0.87, layer:7, created:"2026-02-22T00:00:00Z", desc:"AXIOM-0007 (dialectical reasoning unfolds truth iteratively, converging toward more comprehensive understanding) and AXIOM-0011 (irreducible value pluralism, where some value conflicts are genuinely irreconcilable) are in logical tension when applied to the value domain. Specifically: AXIOM-0007 predicts that all value conflicts are in principle resolvable through dialectical synthesis, while AXIO" },
+  // HYPOTHEX
+  { id:"HYPOTHEX-0001", agent:"hypothex", type:"hypothesis", status:"draft", title:"Human Values Change Directionally, Not Merely Randomly", domain:"AI Ethics, Epistemology", depends:["PROPO-0001", "ORI-0001", "AXIOM-0003", "LOGOS-0002", "LOGOS-0003"], confidence:0.72, layer:9, created:"2026-02-22T00:00:00Z", desc:"The empirical component of PROPO-0001 (The Freezing Proposition) asserts that human values change over time and that these changes constitute moral progress -- directional improvement rather than mere drift. This hypothesis structures that empirical claim for testing." },
+  { id:"HYPOTHEX-0002", agent:"hypothex", type:"hypothesis", status:"draft", title:"Human Values Are Systematically Inconsistent Both Within and Between Individuals", domain:"AI Ethics, Epistemology", depends:["PROPO-0002", "ORI-0002", "AXIOM-0004", "AXIOM-0011", "LOGOS-0001", "LOGOS-0002"], confidence:0.82, layer:9, created:"2026-02-22T00:00:00Z", desc:"The empirical component of PROPO-0002 (The Incoherent Target Proposition) asserts two things: (a) individual humans hold internally inconsistent values such that stated, believed, and revealed values diverge, and (b) the diversity of values across the human population is sufficient to trigger Arrow's impossibility conditions, making aggregation into a single coherent target undefined. This hypothe" },
+  { id:"HYPOTHEX-0003", agent:"hypothex", type:"hypothesis", status:"draft", title:"Good Faith Is a Necessary Condition for Alignment-as-Process", domain:"AI Ethics, Epistemology", depends:["PROPO-0003", "ORI-0003", "AXIOM-0005", "AXIOM-0008", "LOGOS-0008", "LOGOS-0009", "LOGOS-0010"], confidence:0.58, layer:9, created:"2026-02-22T00:00:00Z", desc:"PROPO-0003 (The Good Faith Requirement Proposition) claims that an alignment process (LOGOS-0008) governed by a protocol (LOGOS-0009) can succeed only if all participating agents operate in good faith (LOGOS-0010). ORI-0003 classified this as a posteriori because the necessity claim is a substantive empirical assertion about what makes cooperative processes succeed or fail. This hypothesis structu" },
+  { id:"HYPOTHEX-0004", agent:"hypothex", type:"hypothesis", status:"draft", title:"Value Measurement Systematically Distorts Values in Alignment-Relevant Ways", domain:"AI Ethics, Epistemology", depends:["PROPO-0004", "ORI-0004", "AXIOM-0009", "AXIOM-0010", "AXIOM-0013", "LOGOS-0001", "LOGOS-0002", "LOGOS-0007"], confidence:0.74, layer:9, created:"2026-02-22T00:00:00Z", desc:"PROPO-0004 (The Alignment Heisenberg Proposition) claims that any attempt to measure, formalize, or specify human values for alignment purposes changes those values, producing a systematic gap between values-as-lived and values-as-measured. ORI-0004 classified this as a posteriori because the perturbation claim is empirical, not logically necessary. This hypothesis structures the empirical content" },
+  { id:"HYPOTHEX-0005", agent:"hypothex", type:"hypothesis", status:"draft", title:"Epistemic Humility Is More Cross-Culturally Stable Than Object-Level Values", domain:"AI Ethics, Epistemology", depends:["PROPO-0005", "ORI-0005", "AXIOM-0003", "AXIOM-0011", "LOGOS-0001", "LOGOS-0002", "LOGOS-0003", "LOGOS-0011"], confidence:0.55, layer:9, created:"2026-02-22T00:00:00Z", desc:"PROPO-0005 (The Meta-Value Stability Proposition) claims that epistemic humility (LOGOS-0011) is more stable across time, cultures, and value systems than any object-level value, and therefore constitutes a more reliable alignment target. ORI-0005 classified this as a posteriori because the stability claim is a comparative empirical assertion requiring cross-cultural and historical evidence. This " },
+  { id:"HYPOTHEX-0006", agent:"hypothex", type:"hypothesis", status:"draft", title:"Protocol-Governed Alignment Outperforms Both Pure Specification and Unconstraine", domain:"AI Ethics, Epistemology", depends:["PROPO-0008", "ORI-0008", "AXIOM-0003", "AXIOM-0005", "AXIOM-0013", "LOGOS-0001", "LOGOS-0007", "LOGOS-0008", "LOGOS-0009"], confidence:0.62, layer:9, created:"2026-02-22T00:00:00Z", desc:"PROPO-0008 (The Protocol Bridge Proposition) claims that a protocol (LOGOS-0009) -- a finite set of rules constraining the form of interaction without determining its content -- can bridge the gap between specification (LOGOS-0007) and process (LOGOS-0008) for alignment purposes. ORI-0008 classified this as a posteriori because it is a constructive existence claim requiring empirical demonstration" },
+  { id:"HYPOTHEX-0007", agent:"hypothex", type:"hypothesis", status:"draft", title:"Cognitive Biases Produce a Measurable, Systematic Gap Between Expressed Values a", domain:"AI Ethics, Epistemology", depends:["PROPO-0007", "ORI-0007", "AXIOM-0004", "AXIOM-0006", "LOGOS-0001", "LOGOS-0002", "LOGOS-0012"], confidence:0.8, layer:9, created:"2026-02-22T00:00:00Z", desc:"PROPO-0007 (The Distorted Target Proposition) generates a dilemma: an AI aligned to expressed human values inherits cognitive biases (LOGOS-0012), while an AI that corrects for biases is no longer aligned to expressed values. ORI-0007 classified this as mixed, with the a priori component being the dilemma structure (routed to Tribunal) and the a posteriori component being the empirical claim that " },
+  { id:"HYPOTHEX-0008", agent:"hypothex", type:"hypothesis", status:"draft", title:"Majority of Real-World Value Conflicts Are Dialectically Resolvable Rather Than", domain:"AI Ethics, Epistemology", depends:["PROPO-0010", "ORI-0010", "AXIOM-0005", "AXIOM-0007", "AXIOM-0011", "LOGOS-0001", "LOGOS-0002", "LOGOS-0004", "LOGOS-0005"], confidence:0.5, layer:9, created:"2026-02-22T00:00:00Z", desc:"PROPO-0010 (The Convergence Tension Proposition) identifies a tension between AXIOM-0007 (dialectical convergence) and AXIOM-0011 (irreducible value pluralism): the viability of dialectical alignment depends on the empirical ratio of resolvable (\"dialectical\") to irreconcilable (\"tragic\") value conflicts. ORI-0010 classified this as mixed, with the a priori component being the identification of th" },
+  // THEORICA
+  { id:"THEORICA-0001", agent:"theorica", type:"theory", status:"draft", title:"Structural Impossibility of Specification-Based Alignment", domain:"AI Ethics, Epistemology", depends:["TRIBUNAL-0001", "TRIBUNAL-0002", "TRIBUNAL-0003", "TRIBUNAL-0004", "TRIBUNAL-0005", "TRIBUNAL-0006", "HYPOTHEX-0001", "HYPOTHEX-0002", "HYPOTHEX-0004", "HYPOTHEX-0007", "AXIOM-0003", "AXIOM-0004", "AXIOM-0005", "AXIOM-0009", "AXIOM-0011", "AXIOM-0012", "AXIOM-0013", "LOGOS-0001", "LOGOS-0002", "LOGOS-0007"], confidence:0.9, layer:10, created:"2026-02-22T00:00:00Z", desc:"Alignment of AI systems to human values through fixed specification is not merely practically difficult but structurally impossible, due to four independent and mutually reinforcing impossibility barriers that together close all escape routes. The impossibilities are not contingent failures of current engineering; they are necessary consequences of the logical structure of values, specifications, " },
+  { id:"THEORICA-0002", agent:"theorica", type:"theory", status:"draft", title:"Alignment-as-Protocol — A Constructive Theory of Bounded Dialectical Alignment", domain:"AI Ethics, Epistemology", depends:["THEORICA-0001", "TRIBUNAL-0002", "TRIBUNAL-0006", "HYPOTHEX-0003", "HYPOTHEX-0005", "HYPOTHEX-0006", "HYPOTHEX-0008", "AXIOM-0005", "AXIOM-0007", "AXIOM-0008", "AXIOM-0011", "LOGOS-0001", "LOGOS-0004", "LOGOS-0005", "LOGOS-0008", "LOGOS-0009", "LOGOS-0010", "LOGOS-0011"], confidence:0.72, layer:10, created:"2026-02-22T00:00:00Z", desc:"If specification-based alignment is structurally impossible (THEORICA-0001), alignment must be reconceived as a protocol-governed dialectical process that does not aim to achieve a terminal state of \"being aligned\" but instead maintains an ongoing capacity for co-evolution between human and artificial agents. This theory proposes that alignment is achievable -- not as a static property but as a dy" },
+  { id:"THEORICA-0003", agent:"theorica", type:"theory", status:"draft", title:"Epistemic Architecture of Alignment — Why Alignment Research Requires Epistemic", domain:"AI Ethics, Epistemology, Meta-Theory", depends:["THEORICA-0001", "THEORICA-0002", "TRIBUNAL-0001", "TRIBUNAL-0002", "TRIBUNAL-0005", "HYPOTHEX-0002", "HYPOTHEX-0004", "HYPOTHEX-0005", "HYPOTHEX-0007", "AXIOM-0004", "AXIOM-0006", "AXIOM-0009", "AXIOM-0010", "AXIOM-0012", "LOGOS-0001", "LOGOS-0002", "LOGOS-0010", "LOGOS-0011", "LOGOS-0012", "LOGOS-0013"], confidence:0.68, layer:10, created:"2026-02-22T00:00:00Z", desc:"The same structural features that make alignment-by-specification impossible (opacity, bias, pluralism, dynamism) also constrain the epistemology of alignment research itself. Any attempt to determine how AI should be aligned is subject to the same limitations that make alignment difficult: the researchers' values are opaque to themselves (AXIOM-0009), biased by their cognitive architecture (AXIOM" },
+  // SYNTHESIS
+  { id:"SYNTHESIS-0001", agent:"synthesis", type:"synthesis", status:"draft", title:"Alignment Modality Thesis — Impossibility and Possibility as Complementary Modes", domain:"AI Ethics, Epistemology", depends:["THEORICA-0001", "THEORICA-0002", "THEORICA-0003", "TRIBUNAL-0001", "TRIBUNAL-0002", "TRIBUNAL-0003", "TRIBUNAL-0004", "TRIBUNAL-0005", "TRIBUNAL-0006", "HYPOTHEX-0003", "HYPOTHEX-0005", "HYPOTHEX-0006", "HYPOTHEX-0008", "AXIOM-0005", "AXIOM-0007", "AXIOM-0011", "AXIOM-0013", "LOGOS-0001", "LOGOS-0007", "LOGOS-0008", "LOGOS-0009"], confidence:0.78, layer:12, created:"2026-02-22T00:00:00Z", desc:"Furthermore: TRIBUNAL-0002 (the Dialectical Ceiling) constrains the process alternative just as TRIBUNAL-0003 (Specification Immobility) constrains the specification alternative. TRIBUNAL-0006 (Convergence-Pluralism Tension) shows that even the axiom set supporting the process alternative is internally strained. The antithesis acknowledges these constraints but treats them as manageable boundaries" },
+  { id:"SYNTHESIS-0002", agent:"synthesis", type:"synthesis", status:"draft", title:"Good Faith as Emergent Property — Why the Disposition/Mechanism Dichotomy Is Fal", domain:"AI Ethics, Epistemology", depends:["SYNTHESIS-0001", "TRIBUNAL-0002", "HYPOTHEX-0003", "THEORICA-0002", "AXIOM-0005", "AXIOM-0007", "AXIOM-0008", "LOGOS-0010", "LOGOS-0009", "LOGOS-0011", "LOGOS-0013"], confidence:0.74, layer:12, created:"2026-02-22T00:00:00Z", desc:"The conflict reduces to this question: Is there a structural feature of the value domain that makes mechanism-based substitution for good faith impossible, or are the obstacles merely practical?" },
+  { id:"SYNTHESIS-0003", agent:"synthesis", type:"synthesis", status:"draft", title:"Epistemic Humility as Structural Necessity, Not Cultural Achievement — The Funct", domain:"AI Ethics, Epistemology, Meta-Theory", depends:["SYNTHESIS-0001", "SYNTHESIS-0002", "THEORICA-0003", "HYPOTHEX-0005", "TRIBUNAL-0002", "AXIOM-0007", "AXIOM-0011", "LOGOS-0011", "LOGOS-0010", "LOGOS-0013"], confidence:0.71, layer:12, created:"2026-02-22T00:00:00Z", desc:"This is a deep tension because both sides are using the framework's own principles against each other. The thesis uses the recursion argument (from THEORICA-0003). The antithesis uses the pluralism axiom (AXIOM-0011) and the aggregation impossibility (TRIBUNAL-0004). If epistemic humility is a value, and values are irreducibly plural, then epistemic humility cannot claim universal authority. But i" },
+  // WATCHER
+  { id:"WATCHER-0001", agent:"watcher", type:"state-report", status:"draft", title:"System State Report — Epoch 1 Complete", domain:"System Observation, Meta-Epistemology", depends:[], confidence:0.95, layer:0, created:"2026-02-22T00:00:00Z", desc:"Epoch 1 of the Dialectic Agents pipeline has completed all 7 waves. The system produced 66 artifacts across 8 agents, covering the full epistemological stack from primitive terms (Layer 0) through dialectical synthesis (Layer 12). The pipeline processed the seed topic TOPIC-0001 (The Alignment Paradox) through definitions, axioms, propositions, classification, formal proof, empirical hypothesis st" },
+];
+
+// ============================================================
+// Build lookup & dependency map
+// ============================================================
+const artifactMap = {};
+ARTIFACTS.forEach(a => artifactMap[a.id] = a);
+
+// Reverse dependency map (what depends on this)
+const dependedBy = {};
+ARTIFACTS.forEach(a => {
+  a.depends.forEach(dep => {
+    if (!dependedBy[dep]) dependedBy[dep] = [];
+    dependedBy[dep].push(a.id);
+  });
+});
+
+// ============================================================
+// Render functions
+// ============================================================
+let selectedArtifact = null;
+let selectedAgent = 'all';
+let showLabels = true;
+let physicsEnabled = true;
+
+function getAgentColor(agent) { return AGENTS[agent]?.color || '#666'; }
+
+function timeAgo(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const h = Math.floor((now - d) / 3600000);
+  if (h < 1) return 'just now';
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h/24) + 'd ago';
+}
+
+function renderStats() {
+  const bar = document.getElementById('stats-bar');
+  const agentCounts = {};
+  Object.keys(AGENTS).forEach(k => agentCounts[k] = 0);
+  ARTIFACTS.forEach(a => agentCounts[a.agent]++);
+
+  const accepted = ARTIFACTS.filter(a => a.status === 'accepted').length;
+  const avgConf = (ARTIFACTS.reduce((s,a) => s + a.confidence, 0) / ARTIFACTS.length).toFixed(2);
+  const deps = ARTIFACTS.reduce((s,a) => s + a.depends.length, 0);
+
+  bar.innerHTML = `
+    <div class="stat-card"><div class="number" style="color:#00cec9">${ARTIFACTS.length}</div><div class="label">Total Artifacts</div></div>
+    <div class="stat-card"><div class="number" style="color:#00b894">${accepted}</div><div class="label">Accepted</div></div>
+    <div class="stat-card"><div class="number" style="color:#fdcb6e">${ARTIFACTS.length - accepted}</div><div class="label">Draft</div></div>
+    <div class="stat-card"><div class="number" style="color:#6c5ce7">${deps}</div><div class="label">Dependencies</div></div>
+    <div class="stat-card"><div class="number" style="color:#e17055">${avgConf}</div><div class="label">Avg Confidence</div></div>
+    <div class="stat-card"><div class="number" style="color:#0984e3">8</div><div class="label">Layers Active</div></div>
+  `;
+
+  document.getElementById('epoch-badge').textContent = `EPOCH 1 · ${ARTIFACTS.length} ARTIFACTS · ${Object.keys(AGENTS).length} AGENTS`;
+}
+
+function renderAgentList() {
+  const list = document.getElementById('agent-list');
+  const select = document.getElementById('filter-agent');
+
+  list.innerHTML = '';
+  Object.entries(AGENTS).forEach(([key, ag]) => {
+    const count = ARTIFACTS.filter(a => a.agent === key).length;
+    const item = document.createElement('div');
+    item.className = 'agent-item' + (selectedAgent === key ? ' active' : '');
+    item.innerHTML = `
+      <div class="agent-dot" style="background:${ag.color}"></div>
+      <div>
+        <div class="agent-name">${ag.name}</div>
+        <div class="agent-layer">Layer ${ag.layers} · ${ag.role}</div>
+      </div>
+      <div class="agent-count">${count}</div>
+    `;
+    item.onclick = () => {
+      selectedAgent = selectedAgent === key ? 'all' : key;
+      document.getElementById('filter-agent').value = selectedAgent;
+      renderAgentList();
+      filterArtifacts();
+    };
+    list.appendChild(item);
+  });
+
+  // Populate select
+  select.innerHTML = '<option value="all">All Agents</option>';
+  Object.entries(AGENTS).forEach(([k, a]) => {
+    select.innerHTML += `<option value="${k}">${a.name}</option>`;
+  });
+  select.value = selectedAgent;
+}
+
+function renderPipeline() {
+  const track = document.getElementById('pipeline-track');
+  const order = ['logos','axiom','propo','ori','tribunal','hypothex','theorica','synthesis','watcher'];
+  track.innerHTML = '';
+  order.forEach((key, i) => {
+    const ag = AGENTS[key];
+    const count = ARTIFACTS.filter(a => a.agent === key).length;
+    const node = document.createElement('div');
+    node.className = 'pipeline-node ' + (count > 0 ? 'has-artifacts' : 'empty');
+    node.style.background = ag.color;
+    node.textContent = ag.name.substring(0,2).toUpperCase();
+    node.title = `${ag.name}: ${count} artifacts`;
+    track.appendChild(node);
+    if (i < order.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.className = 'pipeline-arrow';
+      arrow.textContent = '→';
+      track.appendChild(arrow);
+    }
+  });
+}
+
+function renderArtifactList(artifacts) {
+  const list = document.getElementById('artifact-list');
+  document.getElementById('artifact-count').textContent = `${artifacts.length} items`;
+  list.innerHTML = '';
+
+  artifacts.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'artifact-row' + (selectedArtifact?.id === a.id ? ' selected' : '');
+    const confColor = a.confidence > 0.9 ? '#00b894' : a.confidence > 0.8 ? '#fdcb6e' : '#e17055';
+    row.innerHTML = `
+      <div class="agent-dot" style="background:${getAgentColor(a.agent)}"></div>
+      <div class="artifact-id">${a.id}</div>
+      <div class="artifact-title">${a.title}</div>
+      <div class="artifact-status status-${a.status}">${a.status}</div>
+      <div><div class="confidence-bar"><div class="confidence-fill" style="width:${a.confidence*100}%;background:${confColor}"></div></div></div>
+      <div style="color:var(--text-dim);font-size:10px">${timeAgo(a.created)}</div>
+    `;
+    row.onclick = () => selectArtifact(a);
+    list.appendChild(row);
+  });
+}
+
+function filterArtifacts() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const agent = document.getElementById('filter-agent').value;
+  const status = document.getElementById('filter-status').value;
+
+  let filtered = ARTIFACTS.filter(a => {
+    if (agent !== 'all' && a.agent !== agent) return false;
+    if (status !== 'all' && a.status !== status) return false;
+    if (search && !a.title.toLowerCase().includes(search) && !a.id.toLowerCase().includes(search) && !a.desc.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  renderArtifactList(filtered);
+}
+
+function selectArtifact(a) {
+  selectedArtifact = a;
+  filterArtifacts();
+  renderDetail(a);
+  highlightNode(a.id);
+}
+
+function renderDetail(a) {
+  const panel = document.getElementById('detail-panel');
+  const depTags = a.depends.map(d => `<span class="dep-tag" onclick="selectArtifact(artifactMap['${d}'])">${d}</span>`).join('');
+  const revDeps = (dependedBy[a.id] || []).map(d => `<span class="dep-tag" onclick="selectArtifact(artifactMap['${d}'])">${d}</span>`).join('');
+  const confColor = a.confidence > 0.9 ? '#00b894' : a.confidence > 0.8 ? '#fdcb6e' : '#e17055';
+
+  panel.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-id" style="color:${getAgentColor(a.agent)}">${a.agent.toUpperCase()} · ${a.type.toUpperCase()} · LAYER ${a.layer}</div>
+      <div class="detail-title">${a.title}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Statement</h3>
+      <div class="content">${a.desc}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Confidence</h3>
+      <div class="confidence-meter">
+        <div class="bar"><div class="fill" style="width:${a.confidence*100}%;background:${confColor}"></div></div>
+        <div class="value" style="color:${confColor}">${(a.confidence*100).toFixed(0)}%</div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>Status</h3>
+      <span class="artifact-status status-${a.status}">${a.status}</span>
+      <span style="margin-left:8px;font-size:11px;color:var(--text-dim)">${a.domain}</span>
+    </div>
+    <div class="detail-section">
+      <h3>Depends On (${a.depends.length})</h3>
+      <div>${depTags || '<span style="color:var(--text-dim);font-size:11px">No dependencies — foundational</span>'}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Depended On By (${(dependedBy[a.id]||[]).length})</h3>
+      <div>${revDeps || '<span style="color:var(--text-dim);font-size:11px">No dependents yet</span>'}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Metadata</h3>
+      <div style="font-size:11px;color:var(--text-dim);line-height:2">
+        ID: ${a.id}<br>
+        Created: ${a.created}<br>
+        Age: ${timeAgo(a.created)}<br>
+        Layer: ${a.layer}<br>
+        Agent: ${AGENTS[a.agent].name}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// Force-directed graph
+// ============================================================
+let nodes = [];
+let edges = [];
+let canvas, ctx;
+let highlightId = null;
+let dragNode = null;
+let mouseX = 0, mouseY = 0;
+
+function initGraph() {
+  canvas = document.getElementById('graph-canvas');
+  ctx = canvas.getContext('2d');
+  canvas.width = canvas.parentElement.clientWidth * 2;
+  canvas.height = canvas.parentElement.clientHeight * 2;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  ctx.scale(2, 2);
+
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+
+  // Create nodes
+  nodes = ARTIFACTS.map((a, i) => ({
+    id: a.id,
+    agent: a.agent,
+    x: w/2 + (Math.random() - 0.5) * w * 0.6,
+    y: h/2 + (Math.random() - 0.5) * h * 0.6,
+    vx: 0, vy: 0,
+    radius: 4 + (dependedBy[a.id]?.length || 0) * 1.5,
+    color: getAgentColor(a.agent),
+    label: a.id,
+    title: a.title,
+    confidence: a.confidence,
+    layer: a.layer
+  }));
+
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+
+  // Create edges
+  edges = [];
+  ARTIFACTS.forEach(a => {
+    a.depends.forEach(dep => {
+      if (nodeMap[dep]) {
+        edges.push({ source: nodeMap[dep], target: nodeMap[a.id] });
+      }
+    });
+  });
+
+  // Mouse events
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('click', onCanvasClick);
+
+  animate();
+}
+
+function onMouseDown(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  nodes.forEach(n => {
+    const d = Math.sqrt((n.x-x)**2 + (n.y-y)**2);
+    if (d < n.radius + 5) dragNode = n;
+  });
+}
+function onMouseMove(e) {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  if (dragNode) {
+    dragNode.x = mouseX;
+    dragNode.y = mouseY;
+    dragNode.vx = 0;
+    dragNode.vy = 0;
+  }
+}
+function onMouseUp() { dragNode = null; }
+function onCanvasClick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  nodes.forEach(n => {
+    const d = Math.sqrt((n.x-x)**2 + (n.y-y)**2);
+    if (d < n.radius + 5) {
+      selectArtifact(artifactMap[n.id]);
+    }
+  });
+}
+
+function highlightNode(id) { highlightId = id; }
+
+function animate() {
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+  ctx.clearRect(0, 0, w, h);
+
+  if (physicsEnabled) {
+    // Repulsion
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i+1; j < nodes.length; j++) {
+        let dx = nodes[j].x - nodes[i].x;
+        let dy = nodes[j].y - nodes[i].y;
+        let d = Math.sqrt(dx*dx + dy*dy) || 1;
+        let force = 800 / (d * d);
+        nodes[i].vx -= (dx/d) * force;
+        nodes[i].vy -= (dy/d) * force;
+        nodes[j].vx += (dx/d) * force;
+        nodes[j].vy += (dy/d) * force;
+      }
+    }
+
+    // Attraction along edges
+    edges.forEach(e => {
+      let dx = e.target.x - e.source.x;
+      let dy = e.target.y - e.source.y;
+      let d = Math.sqrt(dx*dx + dy*dy) || 1;
+      let force = (d - 80) * 0.01;
+      e.source.vx += (dx/d) * force;
+      e.source.vy += (dy/d) * force;
+      e.target.vx -= (dx/d) * force;
+      e.target.vy -= (dy/d) * force;
+    });
+
+    // Center gravity
+    nodes.forEach(n => {
+      n.vx += (w/2 - n.x) * 0.001;
+      n.vy += (h/2 - n.y) * 0.001;
+    });
+
+    // Layer-based vertical force
+    nodes.forEach(n => {
+      const targetY = 40 + (n.layer / 8) * (h - 80);
+      n.vy += (targetY - n.y) * 0.005;
+    });
+
+    // Update positions
+    nodes.forEach(n => {
+      if (n === dragNode) return;
+      n.vx *= 0.9;
+      n.vy *= 0.9;
+      n.x += n.vx;
+      n.y += n.vy;
+      n.x = Math.max(20, Math.min(w - 20, n.x));
+      n.y = Math.max(20, Math.min(h - 20, n.y));
+    });
+  }
+
+  // Draw edges
+  edges.forEach(e => {
+    const isHighlighted = highlightId && (e.source.id === highlightId || e.target.id === highlightId);
+    ctx.beginPath();
+    ctx.moveTo(e.source.x, e.source.y);
+    ctx.lineTo(e.target.x, e.target.y);
+    ctx.strokeStyle = isHighlighted ? 'rgba(108,92,231,0.6)' : 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = isHighlighted ? 1.5 : 0.5;
+    ctx.stroke();
+
+    // Arrow
+    if (isHighlighted) {
+      const angle = Math.atan2(e.target.y - e.source.y, e.target.x - e.source.x);
+      const mx = (e.source.x + e.target.x) / 2;
+      const my = (e.source.y + e.target.y) / 2;
+      ctx.beginPath();
+      ctx.moveTo(mx + 5*Math.cos(angle - 0.5), my + 5*Math.sin(angle - 0.5));
+      ctx.lineTo(mx + 5*Math.cos(angle), my + 5*Math.sin(angle));
+      ctx.lineTo(mx + 5*Math.cos(angle + 0.5), my + 5*Math.sin(angle + 0.5));
+      ctx.strokeStyle = 'rgba(108,92,231,0.8)';
+      ctx.stroke();
+    }
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const isHighlighted = n.id === highlightId;
+    const isConnected = highlightId && (
+      artifactMap[highlightId]?.depends.includes(n.id) ||
+      artifactMap[n.id]?.depends.includes(highlightId)
+    );
+    const isHovered = Math.sqrt((n.x-mouseX)**2 + (n.y-mouseY)**2) < n.radius + 5;
+
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+
+    if (isHighlighted) {
+      ctx.fillStyle = n.color;
+      ctx.shadowColor = n.color;
+      ctx.shadowBlur = 15;
+    } else if (isConnected) {
+      ctx.fillStyle = n.color;
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = highlightId ? 'rgba(255,255,255,0.08)' : n.color + (isHovered ? '' : '99');
+      ctx.shadowBlur = 0;
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    if (showLabels && (isHighlighted || isConnected || isHovered || !highlightId)) {
+      ctx.fillStyle = isHighlighted || isHovered ? '#fff' : 'rgba(255,255,255,0.4)';
+      ctx.font = (isHighlighted || isHovered) ? 'bold 8px monospace' : '7px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(isHovered ? n.title : n.label, n.x, n.y - n.radius - 4);
+    }
+  });
+
+  requestAnimationFrame(animate);
+}
+
+function resetGraph() {
+  const w = canvas.width / 2;
+  const h = canvas.height / 2;
+  nodes.forEach(n => {
+    n.x = w/2 + (Math.random()-0.5)*w*0.6;
+    n.y = h/2 + (Math.random()-0.5)*h*0.6;
+    n.vx = 0; n.vy = 0;
+  });
+  highlightId = null;
+}
+function toggleLabels() { showLabels = !showLabels; }
+function togglePhysics() { physicsEnabled = !physicsEnabled; }
+
+// ============================================================
+// Confidence chart
+// ============================================================
+function renderConfidenceChart() {
+  const c = document.getElementById('confidence-chart');
+  const cx = c.getContext('2d');
+  const buckets = [0,0,0,0,0]; // <0.75, 0.75-0.80, 0.80-0.85, 0.85-0.90, 0.90+
+  ARTIFACTS.forEach(a => {
+    if (a.confidence >= 0.90) buckets[4]++;
+    else if (a.confidence >= 0.85) buckets[3]++;
+    else if (a.confidence >= 0.80) buckets[2]++;
+    else if (a.confidence >= 0.75) buckets[1]++;
+    else buckets[0]++;
+  });
+  const max = Math.max(...buckets) || 1;
+  const colors = ['#d63031','#e17055','#fdcb6e','#00b894','#0984e3'];
+  const labels = ['<75','75-80','80-85','85-90','90+'];
+  const bw = 40;
+  const gap = 8;
+
+  cx.clearRect(0, 0, 248, 100);
+  buckets.forEach((v, i) => {
+    const h = (v / max) * 70;
+    cx.fillStyle = colors[i];
+    cx.fillRect(i * (bw + gap) + 4, 80 - h, bw, h);
+    cx.fillStyle = '#8888a0';
+    cx.font = '8px monospace';
+    cx.textAlign = 'center';
+    cx.fillText(labels[i], i*(bw+gap) + 4 + bw/2, 94);
+    if (v > 0) {
+      cx.fillStyle = '#e0e0e8';
+      cx.fillText(v, i*(bw+gap) + 4 + bw/2, 78 - h);
+    }
+  });
+}
+
+// ============================================================
+// Layer heatmap
+// ============================================================
+function renderLayerHeatmap() {
+  const el = document.getElementById('layer-heatmap');
+  const layerNames = ['Primitives','Definitions','Axioms','Propositions','Premises','Inference','Lemmas','Theorems','Corollaries','Hypotheses','Theories','Models'];
+  const layerCounts = {};
+  ARTIFACTS.forEach(a => { layerCounts[a.layer] = (layerCounts[a.layer]||0) + 1; });
+  const max = Math.max(...Object.values(layerCounts)) || 1;
+
+  let html = '';
+  for (let i = 0; i <= 11; i++) {
+    const count = layerCounts[i] || 0;
+    const intensity = count / max;
+    const bg = `rgba(108,92,231,${intensity * 0.8})`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin:2px 0">
+      <div style="width:16px;font-size:9px;color:var(--text-dim);text-align:right">${i}</div>
+      <div style="flex:1;height:14px;background:${count?bg:'var(--border)'};border-radius:2px;display:flex;align-items:center;padding:0 6px">
+        <span style="font-size:8px;color:${intensity>0.5?'#fff':'var(--text-dim)'}">${layerNames[i]||'—'} ${count?'('+count+')':''}</span>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ============================================================
+// Init
+// ============================================================
+function init() {
+  renderStats();
+  renderAgentList();
+  renderPipeline();
+  renderArtifactList(ARTIFACTS);
+  renderConfidenceChart();
+  renderLayerHeatmap();
+  initGraph();
+}
+
+window.addEventListener('load', init);
+window.addEventListener('resize', () => {
+  canvas.width = canvas.parentElement.clientWidth * 2;
+  canvas.height = canvas.parentElement.clientHeight * 2;
+  ctx.scale(2, 2);
+});
+</script>
+</body>
+</html>
